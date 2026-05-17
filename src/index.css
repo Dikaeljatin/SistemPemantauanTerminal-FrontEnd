@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sidebar: #1e3a8a;
+  --color-sidebar-hover: #1e40af;
+  --color-accent: #fbbf24;
+  --color-accent-hover: #f59e0b;
+  --color-card-bg: #ffffff;
+  --color-bg: #e5e7eb;
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-chart-microbus: #60a5fa;
+  --color-chart-hiace: #4ade80;
+  --color-chart-l300: #facc15;
+  --color-chart-kia: #f87171;
+}
+
+body {
+  background-color: var(--color-bg);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
