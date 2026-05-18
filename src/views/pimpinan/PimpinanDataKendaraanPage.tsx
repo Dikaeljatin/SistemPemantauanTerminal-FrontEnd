@@ -4,7 +4,7 @@ import { CarFront, CalendarDays, Calendar, Filter, ChevronDown, Search } from "l
 import { useState, useEffect } from "react";
 
 const bulanList = [
-  "Januari","Februari","Maret","April","Mei","Juni",
+  "Semua","Januari","Februari","Maret","April","Mei","Juni",
   "Juli","Agustus","September","Oktober","November","Desember",
 ];
 const bulanIndex: Record<string, number> = {
@@ -77,7 +77,7 @@ export default function PimpinanDataKendaraanPage() {
       const [yyyy, mm, dd] = selectedTanggal.split("-").map(Number);
       return date.getFullYear()===yyyy && date.getMonth()===mm-1 && date.getDate()===dd;
     }
-    return date.getMonth() === bulanIndex[selectedBulan] && date.getFullYear() === selectedTahun;
+    return (selectedBulan === "Semua" || date.getMonth() === bulanIndex[selectedBulan]) && date.getFullYear() === selectedTahun;
   });
 
   // Filter status + search

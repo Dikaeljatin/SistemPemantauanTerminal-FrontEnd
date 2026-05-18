@@ -3,16 +3,16 @@
 import { useState, useRef, useEffect } from "react";
 import { Globe, CarFront, Eye, EyeOff, Lock, Users, ShieldCheck, Briefcase, Crown, ChevronDown, Check } from "lucide-react";
 
-export type UserRole = "admin" | "petugas" | "pimpinan";
+export type UserRole = "super_admin" | "petugas" | "pimpinan";
 
 interface LoginPageProps {
   onLogin: (role: UserRole) => void;
 }
 
 const roles: { value: UserRole; label: string; icon: React.ReactNode }[] = [
-  { value: "admin",    label: "Admin",    icon: <ShieldCheck className="w-4 h-4" /> },
-  { value: "petugas",  label: "Petugas",  icon: <Briefcase   className="w-4 h-4" /> },
-  { value: "pimpinan", label: "Pimpinan", icon: <Crown       className="w-4 h-4" /> },
+  { value: "super_admin", label: "Super Admin", icon: <ShieldCheck className="w-4 h-4" /> },
+  { value: "petugas",     label: "Petugas",     icon: <Briefcase   className="w-4 h-4" /> },
+  { value: "pimpinan",    label: "Pimpinan",    icon: <Crown       className="w-4 h-4" /> },
 ];
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
@@ -21,7 +21,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selectedRole, setSelectedRole] = useState<UserRole>("admin");
+  const [selectedRole, setSelectedRole] = useState<UserRole>("super_admin");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -174,7 +174,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Masukkan username"
-                  className="w-full bg-white/10 border border-white/15 rounded-xl pl-10 pr-4 py-3 text-white text-sm placeholder:text-white/30 outline-none focus:border-accent/50 focus:bg-white/15 transition-all"
+                  className="w-full bg-white/10 border border-white/15 rounded-xl pl-10 pr-11 py-3 text-white text-sm placeholder:text-white/30 outline-none focus:border-accent/50 focus:bg-white/15 transition-all [&:-webkit-autofill]:bg-white/10 [&:-webkit-autofill]:[-webkit-text-fill-color:white] [&:-webkit-autofill]:[transition:background-color_9999s]"
                 />
               </div>
             </div>
@@ -191,7 +191,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
-                  className="w-full bg-white/10 border border-white/15 rounded-xl pl-10 pr-11 py-3 text-white text-sm placeholder:text-white/30 outline-none focus:border-accent/50 focus:bg-white/15 transition-all"
+                  className="w-full bg-white/10 border border-white/15 rounded-xl pl-10 pr-11 py-3 text-white text-sm placeholder:text-white/30 outline-none focus:border-accent/50 focus:bg-white/15 transition-all [&:-webkit-autofill]:bg-white/10 [&:-webkit-autofill]:[-webkit-text-fill-color:white] [&:-webkit-autofill]:[transition:background-color_9999s]"
                 />
                 <button
                   type="button"

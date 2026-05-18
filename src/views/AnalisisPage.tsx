@@ -10,7 +10,7 @@ import {
 } from "recharts";
 
 const bulanList = [
-  "Januari","Februari","Maret","April","Mei","Juni",
+  "Semua","Januari","Februari","Maret","April","Mei","Juni",
   "Juli","Agustus","September","Oktober","November","Desember",
 ];
 const bulanIndex: Record<string, number> = {
@@ -97,7 +97,7 @@ export default function AnalisisPage() {
       const [yyyy, mm, dd] = tanggal.split("-").map(Number);
       return date.getFullYear() === yyyy && date.getMonth() === mm - 1 && date.getDate() === dd;
     }
-    return date.getMonth() === bulanIndex[bulan] && date.getFullYear() === tahun;
+    return (bulan === "Semua" || date.getMonth() === bulanIndex[bulan]) && date.getFullYear() === tahun;
   });
 
   // Generate chart data

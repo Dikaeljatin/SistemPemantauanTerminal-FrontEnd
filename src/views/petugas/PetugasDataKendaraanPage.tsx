@@ -1,10 +1,10 @@
 "use client";
 
-import { CarFront, Filter, ChevronDown, Calendar, Trash2, Pencil, X } from "lucide-react";
+import { CarFront, Filter, ChevronDown, Calendar, Trash2, Pencil, X, Upload, Download } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const bulanList = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Semua", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
@@ -50,6 +50,20 @@ export default function PetugasDataKendaraanPage() {
   const [filterStatus, setFilterStatus] = useState<"semua" | "Kedatangan" | "Keberangkatan">("semua");
   const today = new Date().toISOString().split("T")[0];
   const [tanggal, setTanggal] = useState(today);
+  const [importEnabled, setImportEnabled] = useState(false);
+  const [exportEnabled, setExportEnabled] = useState(false);
+
+  // Fetch konfigurasi
+  useEffect(() => {
+    fetch("http://localhost:5000/api/konfigurasi")
+      .then((res) => res.json())
+      .then((json) => {
+        const config = json.data || {};
+        setImportEnabled(config.import_enabled === "true");
+        setExportEnabled(config.export_enabled === "true");
+      })
+      .catch(() => {});
+  }, []);
 
   // Fetch data dari API
   useEffect(() => {
@@ -93,7 +107,7 @@ export default function PetugasDataKendaraanPage() {
       const [yyyy, mm, dd] = tanggal.split("-").map(Number);
       if (!(date.getFullYear() === yyyy && date.getMonth() === mm - 1 && date.getDate() === dd)) return false;
     } else {
-      if (date.getMonth() !== bulanIndex[bulan] || date.getFullYear() !== tahun) return false;
+      if (!(bulan === "Semua" || date.getMonth() === bulanIndex[bulan]) || date.getFullYear() !== tahun) return false;
     }
     // Filter status
     const matchStatus = filterStatus === "semua" || k.status === filterStatus;
@@ -274,9 +288,23 @@ export default function PetugasDataKendaraanPage() {
       )}
 
       {/* Header card */}
-      <div className="bg-sidebar rounded-2xl px-8 py-5 flex items-center gap-4 shadow-lg">
-        <CarFront className="w-8 h-8 text-white" />
-        <h2 className="text-white font-bold text-xl tracking-wide">DATA KENDARAAN</h2>
+      <div className="bg-sidebar rounded-2xl px-8 py-5 flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-4">
+          <CarFront className="w-8 h-8 text-white" />
+          <h2 className="text-white font-bold text-xl tracking-wide">DATA KENDARAAN</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          {importEnabled && (
+            <button className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+              <Upload className="w-3.5 h-3.5" /> Import
+            </button>
+          )}
+          {exportEnabled && (
+            <button className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+              <Download className="w-3.5 h-3.5" /> Export
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl p-6 shadow-md">

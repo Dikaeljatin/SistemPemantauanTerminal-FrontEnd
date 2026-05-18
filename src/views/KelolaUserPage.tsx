@@ -3,7 +3,7 @@
 import { Users, Plus, Search, Shield, User, Pencil, Trash2, X, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 
-type Role = "Admin" | "Petugas" | "Pimpinan";
+type Role = "Super Admin" | "Petugas" | "Pimpinan";
 type Status = "Aktif" | "Nonaktif";
 
 interface UserData {
@@ -16,12 +16,12 @@ interface UserData {
 }
 
 const roleBadge: Record<Role, string> = {
-  Admin:    "bg-purple-100 text-purple-700",
-  Petugas:  "bg-blue-100 text-blue-700",
-  Pimpinan: "bg-amber-100 text-amber-700",
+  "Super Admin": "bg-purple-100 text-purple-700",
+  Petugas:       "bg-blue-100 text-blue-700",
+  Pimpinan:      "bg-amber-100 text-amber-700",
 };
 
-const roles: Role[] = ["Admin", "Petugas", "Pimpinan"];
+const roles: Role[] = ["Super Admin", "Petugas", "Pimpinan"];
 
 // ─── Modal Tambah / Edit ──────────────────────────────────────────────────────
 interface ModalProps {
@@ -215,7 +215,7 @@ export default function KelolaUserPage() {
           nama: u.nama || "",
           email: u.email || "",
           username: u.username || "",
-          role: (u.role === "admin" ? "Admin" : u.role === "petugas" ? "Petugas" : "Pimpinan") as Role,
+          role: (u.role === "super_admin" ? "Super Admin" : u.role === "petugas" ? "Petugas" : "Pimpinan") as Role,
           status: (u.status === "nonaktif" ? "Nonaktif" : "Aktif") as Status,
         }));
         setUsers(rows);
@@ -236,7 +236,7 @@ export default function KelolaUserPage() {
       const res = await fetch("http://localhost:5000/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nama: data.nama, email: data.email, username: data.username, password: data.username + "123", role: data.role.toLowerCase() }),
+        body: JSON.stringify({ nama: data.nama, email: data.email, username: data.username, password: data.username + "123", role: data.role === "Super Admin" ? "super_admin" : data.role.toLowerCase() }),
       });
       const json = await res.json();
       if (res.ok) {
@@ -257,7 +257,7 @@ export default function KelolaUserPage() {
       await fetch(`http://localhost:5000/api/users/${editUser.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nama: pendingEdit.nama, email: pendingEdit.email, username: pendingEdit.username, role: pendingEdit.role.toLowerCase(), status: pendingEdit.status.toLowerCase() }),
+        body: JSON.stringify({ nama: pendingEdit.nama, email: pendingEdit.email, username: pendingEdit.username, role: pendingEdit.role === "Super Admin" ? "super_admin" : pendingEdit.role.toLowerCase(), status: pendingEdit.status.toLowerCase() }),
       });
       setUsers(users.map((u) => (u.id === editUser.id ? { ...u, ...pendingEdit } : u)));
     } catch (err) { console.error(err); }
@@ -273,7 +273,7 @@ export default function KelolaUserPage() {
     setDeleteUser(null);
   };
 
-  const totalAdmin    = users.filter((u) => u.role === "Admin").length;
+  const totalAdmin    = users.filter((u) => u.role === "Super Admin").length;
   const totalPetugas  = users.filter((u) => u.role === "Petugas").length;
   const totalPimpinan = users.filter((u) => u.role === "Pimpinan").length;
 
@@ -318,7 +318,7 @@ export default function KelolaUserPage() {
           <div className="bg-white rounded-2xl p-6 shadow-md">
             <Shield className="w-6 h-6 text-purple-500 mb-3" />
             <p className="text-3xl font-bold text-text-primary">{totalAdmin}</p>
-            <p className="text-sm text-text-secondary mt-1">Admin</p>
+            <p className="text-sm text-text-secondary mt-1">Super Admin</p>
           </div>
           <div className="bg-white rounded-2xl p-6 shadow-md">
             <User className="w-6 h-6 text-blue-500 mb-3" />

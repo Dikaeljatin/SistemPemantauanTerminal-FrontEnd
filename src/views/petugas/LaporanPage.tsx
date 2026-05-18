@@ -25,7 +25,7 @@ interface KendaraanRow {
   penumpangDatang: number; penumpangBerangkat: number; trayekAsal: string; trayekTujuan: string; perusahaan: string;
 }
 
-const bulanList = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const bulanList = ["Semua","Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const bulanIndex: Record<string,number> = { Januari:0,Februari:1,Maret:2,April:3,Mei:4,Juni:5,Juli:6,Agustus:7,September:8,Oktober:9,November:10,Desember:11 };
 
 function parseTimestamp(ts: string): Date {
@@ -179,7 +179,7 @@ export default function LaporanPage() {
       const [yyyy,mm,dd] = selectedTanggal.split("-").map(Number);
       return date.getFullYear()===yyyy && date.getMonth()===mm-1 && date.getDate()===dd;
     }
-    return date.getMonth() === bulanIndex[selectedBulan] && date.getFullYear() === selectedTahun;
+    return (selectedBulan === "Semua" || date.getMonth() === bulanIndex[selectedBulan]) && date.getFullYear() === selectedTahun;
   });
 
   const totalDatang    = previewData.filter(k=>k.status==="Kedatangan").length;

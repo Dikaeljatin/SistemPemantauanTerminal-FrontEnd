@@ -1,19 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ClipboardList, ArrowLeft, ArrowRight, CheckCircle, ChevronDown } from "lucide-react";
 
 // ─── options ──────────────────────────────────────────────────────────────────
-const jenisOptions  = ["Microbus", "Hiace", "L300", "Kia"];
 const trayekOptions = ["Banda Aceh", "Meulaboh", "Tapaktuan", "Subulussalam", "Blangpidie"];
 
-// Mapping jenis kendaraan → kapasitas otomatis
-const kapasitasMap: Record<string, string> = {
-  Microbus: "16",
-  Hiace: "12",
-  L300: "10",
-  Kia: "10",
-};
+// Mapping jenis kendaraan → kapasitas (akan di-fetch dari API)
+let kapasitasMap: Record<string, string> = {};
+let jenisOptions: string[] = [];
 
 type Mode = null | "kedatangan" | "keberangkatan";
 
@@ -506,6 +501,19 @@ function FormView({
 // ─── Main: pilihan dua kartu ──────────────────────────────────────────────────
 export default function IsiDataKendaraanPage() {
   const [mode, setMode] = useState<Mode>(null);
+
+  // Fetch jenis kendaraan dari API
+  useEffect(() => {
+    fetch("http://localhost:5000/api/jenis-kendaraan")
+      .then((res) => res.json())
+      .then((json) => {
+        const items = json.data || [];
+        jenisOptions = items.map((i: any) => i.nama);
+        kapasitasMap = {};
+        items.forEach((i: any) => { kapasitasMap[i.nama] = String(i.kapasitas); });
+      })
+      .catch(() => {});
+  }, []);
 
   if (mode === "kedatangan")
     return <FormView title="Kedatangan" mode="kedatangan" onBack={() => setMode(null)} />;

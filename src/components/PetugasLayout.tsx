@@ -1,19 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, ClipboardList, Table2, FileText, LogOut, Globe, CarFront, UserCircle, Menu, X } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Table2, FileText, BarChart3, Brain, LogOut, Globe, CarFront, UserCircle, Menu, X } from "lucide-react";
 import PetugasDashboardPage from "../views/petugas/PetugasDashboardPage";
 import IsiDataKendaraanPage from "../views/petugas/IsiDataKendaraanPage";
 import PetugasDataKendaraanPage from "../views/petugas/PetugasDataKendaraanPage";
 import LaporanPage from "../views/petugas/LaporanPage";
+import DashboardPage from "../views/DashboardPage";
+import AnalisisPage from "../views/AnalisisPage";
+import PrediksiPage from "../views/PrediksiPage";
 import LogoutConfirmModal from "./LogoutConfirmModal";
 
-type PetugasMenu = "dashboard" | "isi-data" | "data-kendaraan" | "laporan";
+type PetugasMenu = "dashboard" | "isi-data" | "data-kendaraan" | "analisis" | "prediksi" | "laporan";
 
 const menuItems: { id: PetugasMenu; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "dashboard",       label: "DASHBOARD",          icon: LayoutDashboard },
   { id: "isi-data",        label: "ISI DATA KENDARAAN", icon: ClipboardList   },
   { id: "data-kendaraan",  label: "DATA KENDARAAN",     icon: Table2          },
+  { id: "analisis",        label: "ANALISIS",           icon: BarChart3       },
+  { id: "prediksi",        label: "PREDIKSI",           icon: Brain           },
   { id: "laporan",         label: "LAPORAN",            icon: FileText        },
 ];
 
@@ -23,23 +28,21 @@ interface PetugasLayoutProps {
 
 export default function PetugasLayout({ onLogout }: PetugasLayoutProps) {
   const [activeMenu, setActiveMenu] = useState<PetugasMenu>("dashboard");
-  const [selectedBulan, setSelectedBulan] = useState("Januari");
   const [showConfirm, setShowConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const renderPage = () => {
     switch (activeMenu) {
       case "dashboard":
-        return (
-          <PetugasDashboardPage
-            selectedBulan={selectedBulan}
-            onBulanChange={setSelectedBulan}
-          />
-        );
+        return <DashboardPage />;
       case "isi-data":
         return <IsiDataKendaraanPage />;
       case "data-kendaraan":
         return <PetugasDataKendaraanPage />;
+      case "analisis":
+        return <AnalisisPage />;
+      case "prediksi":
+        return <PrediksiPage />;
       case "laporan":
         return <LaporanPage />;
       default:
