@@ -10,7 +10,6 @@ import {
   Users,
   CalendarDays,
   Search,
-  ArrowUpDown,
 } from "lucide-react";
 import {
   BarChart,
@@ -20,8 +19,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
 } from "recharts";
 
 // Statistik cards
@@ -35,19 +32,6 @@ const stats: { label: string; value: string; icon: typeof CarFront; color: strin
 
 // Grafik prediksi data
 const grafikData: { jam: string; masuk: number; keluar: number }[] = [];
-
-// Tabel data
-const tableData: { id: number; waktu: string; tnkb: string; jenis: string; status: string; penumpang: number; trayek: string; perusahaan: string }[] = [];
-
-const headers = [
-  { key: "waktu", label: "Waktu", sortable: true },
-  { key: "tnkb", label: "TNKB", sortable: true },
-  { key: "jenis", label: "Jenis Kendaraan", sortable: true },
-  { key: "status", label: "Status", sortable: true },
-  { key: "penumpang", label: "Jumlah Penumpang", sortable: true },
-  { key: "trayek", label: "Trayek", sortable: true },
-  { key: "perusahaan", label: "Nama Perusahaan", sortable: true },
-];
 
 export default function PrediksiPage() {
   const today = new Date().toISOString().split("T")[0];
@@ -248,74 +232,6 @@ export default function PrediksiPage() {
             Puncak kendaraan masuk terjadi pada pukul 08:00 (42 kendaraan) dan puncak keluar pada pukul 18:00 (35 kendaraan).
             Data ini dapat membantu dalam perencanaan manajemen terminal dan alokasi sumber daya.
           </p>
-        </div>
-      </div>
-
-      {/* Tabel Data Prediksi */}
-      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-text-primary text-sm">Detail Prediksi Kendaraan</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px]">
-            <thead>
-              <tr className="border-b border-gray-200">
-                {headers.map((h) => (
-                  <th
-                    key={h.key}
-                    className="text-left px-6 py-4 text-xs font-semibold text-text-secondary uppercase tracking-wider whitespace-nowrap"
-                  >
-                    {h.sortable ? (
-                      <div className="flex items-center gap-1 cursor-pointer hover:text-text-primary transition-colors">
-                        <span>{h.label}</span>
-                        <ArrowUpDown className="w-3 h-3" />
-                      </div>
-                    ) : (
-                      <span>{h.label}</span>
-                    )}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {tableData.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-6 py-3.5 text-sm text-text-secondary whitespace-nowrap">
-                    {row.waktu}
-                  </td>
-                  <td className="px-6 py-3.5 text-sm font-medium text-text-primary whitespace-nowrap">
-                    {row.tnkb}
-                  </td>
-                  <td className="px-6 py-3.5 text-sm text-text-secondary whitespace-nowrap">
-                    {row.jenis}
-                  </td>
-                  <td className="px-6 py-3.5 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                        row.status === "Masuk"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-sm text-text-secondary whitespace-nowrap text-center">
-                    {row.penumpang}
-                  </td>
-                  <td className="px-6 py-3.5 text-sm text-text-secondary whitespace-nowrap">
-                    {row.trayek}
-                  </td>
-                  <td className="px-6 py-3.5 text-sm font-medium text-text-primary whitespace-nowrap">
-                    {row.perusahaan}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

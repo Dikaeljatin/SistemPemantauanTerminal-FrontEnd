@@ -50,6 +50,10 @@ export default function DashboardTable() {
   const todayStr = new Date().toISOString().split("T")[0];
   const [tanggal, setTanggal] = useState(todayStr);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
+
   useEffect(() => {
     fetch("http://localhost:5000/api/pergerakan")
       .then((res) => res.json())
@@ -92,6 +96,18 @@ export default function DashboardTable() {
     }
     return filterStatus === "semua" || k.status === filterStatus;
   });
+
+  // Pagination logic
+  const totalItems = displayData.length;
+  const totalPages = Math.ceil(totalItems / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedData = displayData.slice(startIndex, endIndex);
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterMode, bulan, tahun, tanggal, filterStatus]);
 
   return (
     <div className="bg-white rounded-2xl shadow-md overflow-hidden">
@@ -209,16 +225,16 @@ export default function DashboardTable() {
             </tr>
           </thead>
           <tbody>
-            {displayData.length === 0 ? (
+            {paginatedData.length === 0 ? (
               <tr>
                 <td colSpan={10} className="px-4 py-10 text-center text-sm text-text-secondary">
                   Tidak ada data yang sesuai filter.
                 </td>
               </tr>
             ) : (
-              displayData.map((k, idx) => (
+              paginatedData.map((k, idx) => (
                 <tr key={k.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3.5 text-sm text-text-secondary whitespace-nowrap">{idx + 1}</td>
+                  <td className="px-4 py-3.5 text-sm text-text-secondary whitespace-nowrap">{startIndex + idx + 1}</td>
                   <td className="px-4 py-3.5 text-sm text-text-secondary whitespace-nowrap">{k.timestamp}</td>
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -240,6 +256,91 @@ export default function DashboardTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="px-6 pb-5 pt-4 flex items-center justify-between border-t border-gray-100">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-text-secondary">
+              Menampilkan {startIndex + 1}–{Math.min(endIndex, totalItems)} dari {totalItems} data
+            </span>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-text-secondary">Per halaman:</label>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30"
+              >
+                {[10, 20, 50, 100].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
+            >
+              «
+            </button>
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
+            >
+              ‹
+            </button>
+
+            {(() => {
+              const pages: (number | string)[] = [];
+              const maxVisible = 5;
+              let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+              let end = Math.min(totalPages, start + maxVisible - 1);
+              if (end - start < maxVisible - 1) {
+                start = Math.max(1, end - maxVisible + 1);
+              }
+              if (start > 1) { pages.push(1); if (start > 2) pages.push("..."); }
+              for (let i = start; i <= end; i++) pages.push(i);
+              if (end < totalPages) { if (end < totalPages - 1) pages.push("..."); pages.push(totalPages); }
+              return pages.map((p, i) =>
+                typeof p === "string" ? (
+                  <span key={`ellipsis-${i}`} className="px-2 py-1.5 text-sm text-text-secondary">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p)}
+                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                      currentPage === p
+                        ? "bg-sidebar text-white font-semibold"
+                        : "hover:bg-gray-100 text-text-secondary"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              );
+            })()}
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
+            >
+              ›
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
+            >
+              »
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

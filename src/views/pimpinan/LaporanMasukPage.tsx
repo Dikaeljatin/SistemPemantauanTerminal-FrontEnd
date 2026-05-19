@@ -1,6 +1,6 @@
 "use client";
 
-import { Inbox, Eye, Clock, CheckCheck, X, Search, Filter, ChevronDown } from "lucide-react";
+import { Inbox, Eye, Clock, CheckCheck, X, Search, Filter, ChevronDown, Download } from "lucide-react";
 import { useState, useEffect } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -99,6 +99,15 @@ function DetailModal({
               Tandai Sudah Dibaca
             </button>
           )}
+          <button
+            onClick={() => {
+              window.open(`http://localhost:5000/api/laporan/${item.id}/export`, '_blank');
+            }}
+            className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Download Excel
+          </button>
           <button
             onClick={onClose}
             className="flex-1 bg-gray-100 hover:bg-gray-200 text-text-secondary font-semibold py-3 rounded-xl transition-colors"
@@ -350,6 +359,18 @@ export default function LaporanMasukPage() {
                   }`}>
                     {item.status === "belum-dibaca" ? "Baru" : "Dibaca"}
                   </span>
+
+                  {/* Download button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(`http://localhost:5000/api/laporan/${item.id}/export`, '_blank');
+                    }}
+                    className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors flex-shrink-0"
+                    title="Download Excel"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>

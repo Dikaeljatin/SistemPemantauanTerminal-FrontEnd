@@ -1,17 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LayoutDashboard, CarFront, Inbox, LogOut, Globe, UserCircle, Crown, Menu, X } from "lucide-react";
+import { LayoutDashboard, Inbox, LogOut, Globe, UserCircle, Crown, Menu, X, CarFront } from "lucide-react";
 import PimpinanDashboardPage from "../views/pimpinan/PimpinanDashboardPage";
-import PimpinanDataKendaraanPage from "../views/pimpinan/PimpinanDataKendaraanPage";
 import LaporanMasukPage from "../views/pimpinan/LaporanMasukPage";
 import LogoutConfirmModal from "./LogoutConfirmModal";
 
-type PimpinanMenu = "dashboard" | "data-kendaraan" | "laporan-masuk";
+type PimpinanMenu = "dashboard" | "laporan-masuk";
 
 const menuItems: { id: PimpinanMenu; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "dashboard",       label: "DASHBOARD",      icon: LayoutDashboard },
-  { id: "data-kendaraan",  label: "DATA KENDARAAN", icon: CarFront        },
   { id: "laporan-masuk",   label: "LAPORAN MASUK",  icon: Inbox           },
 ];
 
@@ -39,7 +37,6 @@ export default function PimpinanLayout({ onLogout }: PimpinanLayoutProps) {
   const renderPage = () => {
     switch (activeMenu) {
       case "dashboard":      return <PimpinanDashboardPage />;
-      case "data-kendaraan": return <PimpinanDataKendaraanPage />;
       case "laporan-masuk":  return <LaporanMasukPage />;
       default:               return <PimpinanDashboardPage />;
     }
