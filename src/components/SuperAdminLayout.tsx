@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LayoutDashboard, Users, Database, Settings, LogOut, Globe, CarFront, UserCircle, ShieldCheck, Menu, X } from "lucide-react";
 import DashboardPage from "../views/DashboardPage";
 import KelolaUserPage from "../views/KelolaUserPage";
@@ -19,12 +19,25 @@ const menuItems: { id: SuperAdminMenu; label: string; icon: typeof LayoutDashboa
 
 interface SuperAdminLayoutProps {
   onLogout: () => void;
+  onMenuChange?: (menu: string) => void;
 }
 
-export default function SuperAdminLayout({ onLogout }: SuperAdminLayoutProps) {
-  const [activeMenu, setActiveMenu] = useState<SuperAdminMenu>("dashboard");
+export default function SuperAdminLayout({ onLogout, onMenuChange }: SuperAdminLayoutProps) {
+  const [activeMenu, setActiveMenu] = useState<SuperAdminMenu>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("superadmin_menu");
+      if (saved && menuItems.some((m) => m.id === saved)) return saved as SuperAdminMenu;
+    }
+    return "dashboard";
+  });
   const [showConfirm, setShowConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Persist active menu + notify parent for URL update
+  useEffect(() => {
+    sessionStorage.setItem("superadmin_menu", activeMenu);
+    onMenuChange?.(activeMenu);
+  }, [activeMenu, onMenuChange]);
 
   const renderPage = () => {
     switch (activeMenu) {

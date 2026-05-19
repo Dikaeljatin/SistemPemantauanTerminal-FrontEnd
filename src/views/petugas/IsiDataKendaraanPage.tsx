@@ -117,10 +117,12 @@ function FormView({
   title,
   mode,
   onBack,
+  userName,
 }: {
   title: string;
   mode: "kedatangan" | "keberangkatan";
   onBack: () => void;
+  userName?: string;
 }) {
   // Timestamp otomatis saat form dibuka
   const now = new Date();
@@ -186,6 +188,7 @@ function FormView({
         trayek_asal: form.trayekAsal,
         trayek_tujuan: form.trayekTujuan,
         timestamp: form.timestamp ? form.timestamp.replace("T", " ") : "",
+        created_by: userName || (typeof window !== "undefined" ? sessionStorage.getItem("app_username") : null) || null,
       };
 
       const res = await fetch("http://localhost:5000/api/pergerakan", {
@@ -499,7 +502,7 @@ function FormView({
 }
 
 // ─── Main: pilihan dua kartu ──────────────────────────────────────────────────
-export default function IsiDataKendaraanPage() {
+export default function IsiDataKendaraanPage({ userName }: { userName?: string }) {
   const [mode, setMode] = useState<Mode>(null);
 
   // Fetch jenis kendaraan dari API
@@ -516,9 +519,9 @@ export default function IsiDataKendaraanPage() {
   }, []);
 
   if (mode === "kedatangan")
-    return <FormView title="Kedatangan" mode="kedatangan" onBack={() => setMode(null)} />;
+    return <FormView title="Kedatangan" mode="kedatangan" onBack={() => setMode(null)} userName={userName} />;
   if (mode === "keberangkatan")
-    return <FormView title="Keberangkatan" mode="keberangkatan" onBack={() => setMode(null)} />;
+    return <FormView title="Keberangkatan" mode="keberangkatan" onBack={() => setMode(null)} userName={userName} />;
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-160px)]">

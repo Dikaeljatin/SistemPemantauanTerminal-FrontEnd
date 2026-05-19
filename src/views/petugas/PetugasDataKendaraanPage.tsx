@@ -1,6 +1,6 @@
 "use client";
 
-import { CarFront, Filter, ChevronDown, Calendar, Trash2, Pencil, X, Upload, Download, FileSpreadsheet } from "lucide-react";
+import { CarFront, Filter, ChevronDown, Calendar, Trash2, Pencil, X, Upload, Download, FileSpreadsheet, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const bulanList = [
@@ -52,6 +52,14 @@ export default function PetugasDataKendaraanPage() {
   const [tanggal, setTanggal] = useState(today);
   const [importEnabled, setImportEnabled] = useState(false);
   const [exportEnabled, setExportEnabled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<{ message: string; errors?: string[] } | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportSuccess, setShowImportSuccess] = useState(false);
+  const [showImportError, setShowImportError] = useState<string | null>(null);
 
   // Fetch konfigurasi
   useEffect(() => {
@@ -115,7 +123,20 @@ export default function PetugasDataKendaraanPage() {
     }
     // Filter status
     const matchStatus = filterStatus === "semua" || k.status === filterStatus;
-    return matchStatus;
+    if (!matchStatus) return false;
+    // Filter search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return (
+        k.tnkb.toLowerCase().includes(q) ||
+        k.jenis.toLowerCase().includes(q) ||
+        k.trayekAsal.toLowerCase().includes(q) ||
+        k.trayekTujuan.toLowerCase().includes(q) ||
+        k.perusahaan.toLowerCase().includes(q) ||
+        k.timestamp.toLowerCase().includes(q)
+      );
+    }
+    return true;
   });
 
   // Pagination logic
@@ -128,7 +149,7 @@ export default function PetugasDataKendaraanPage() {
   // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterMode, bulan, tahun, tanggal, filterStatus]);
+  }, [filterMode, bulan, tahun, tanggal, filterStatus, searchQuery]);
 
   const [hapusId, setHapusId] = useState<number | null>(null);
   const [editItem, setEditItem] = useState<KendaraanRow | null>(null);
@@ -179,6 +200,7 @@ export default function PetugasDataKendaraanPage() {
           status_pergerakan: editForm.status_pergerakan,
           timestamp: editForm.timestamp.replace("T", " "),
           nama_perusahaan: editForm.perusahaan,
+          updated_by: sessionStorage.getItem("app_username") || null,
         }),
       });
       // Update local state
@@ -209,8 +231,244 @@ export default function PetugasDataKendaraanPage() {
     setTimeout(() => setShowEditSuccess(false), 2500);
   };
 
+  const handleImport = async () => {
+    if (!importFile) return;
+    setImportLoading(true);
+    setImportResult(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", importFile);
+      formData.append("created_by", sessionStorage.getItem("app_username") || "");
+
+      const res = await fetch("http://localhost:5000/api/pergerakan/import", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setShowImportModal(false);
+        setImportFile(null);
+        setImportResult(null);
+        setShowImportError(json.error || "Gagal import data");
+      } else {
+        setImportResult({ message: json.message, errors: json.errors });
+        // Show success popup and close import modal
+        if (json.imported > 0) {
+          setShowImportModal(false);
+          setImportFile(null);
+          setImportResult(null);
+          setShowImportSuccess(true);
+          setTimeout(() => setShowImportSuccess(false), 3000);
+          // Refresh data
+          const dataRes = await fetch("http://localhost:5000/api/pergerakan");
+          const dataJson = await dataRes.json();
+          const rows = (dataJson.data || []).map((item: any, idx: number) => {
+            let ts = "";
+            if (item.timestamp) {
+              const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
+              const [datePart, timePart] = raw.split(" ");
+              const [yyyy, mm, dd] = datePart.split("-");
+              const time = timePart ? timePart.slice(0, 5) : "00:00";
+              ts = `${dd}/${mm}/${yyyy} ${time}`;
+            }
+            return {
+              id: item.pergerakan_id ?? idx,
+              timestamp: ts,
+              status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
+              tnkb: item.tnkb || "",
+              jenis: item.jenis_kendaraan || "",
+              penumpangDatang: item.status_pergerakan === "kedatangan" ? item.jumlah_penumpang : 0,
+              penumpangBerangkat: item.status_pergerakan === "keberangkatan" ? item.jumlah_penumpang : 0,
+              trayekAsal: item.trayek_asal || "",
+              trayekTujuan: item.trayek_tujuan || "",
+              perusahaan: item.nama_perusahaan || "",
+            };
+          });
+          setKendaraanData(rows);
+        }
+      }
+    } catch (err) {
+      setShowImportModal(false);
+      setImportFile(null);
+      setImportResult(null);
+      setShowImportError("Gagal terhubung ke server");
+    }
+    setImportLoading(false);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Modal Import */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-7">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-text-primary text-lg">Import Data Kendaraan</h3>
+              <button onClick={() => { setShowImportModal(false); setImportFile(null); setImportResult(null); }} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-blue-700 text-sm font-medium mb-1">Format File</p>
+                <p className="text-blue-600 text-xs">File Excel (.xlsx) harus sesuai dengan template yang disediakan. Pastikan kolom: Timestamp, Status, TNKB, Jenis Kendaraan, Jumlah Penumpang Kedatangan, Jumlah Penumpang Keberangkatan, Trayek Asal, Trayek Tujuan, Nama Perusahaan.</p>
+                <button
+                  onClick={() => window.open("http://localhost:5000/api/pergerakan/template", "_blank")}
+                  className="mt-2 text-blue-700 text-xs font-semibold underline underline-offset-2"
+                >
+                  Download Template
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary uppercase mb-2">Pilih File Excel</label>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => { setImportFile(e.target.files?.[0] || null); setImportResult(null); }}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-text-primary file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sidebar file:text-white hover:file:bg-sidebar-hover"
+                />
+              </div>
+
+              {importFile && (
+                <p className="text-sm text-text-secondary">File: <span className="font-medium text-text-primary">{importFile.name}</span></p>
+              )}
+
+              {importResult && (
+                <div className={`rounded-xl p-4 ${importResult.errors && importResult.errors.length > 0 ? "bg-amber-50 border border-amber-200" : importResult.message.includes("Gagal") || importResult.message.includes("tidak sesuai") ? "bg-red-50 border border-red-200" : "bg-green-50 border border-green-200"}`}>
+                  <p className={`text-sm font-medium ${importResult.message.includes("Gagal") || importResult.message.includes("tidak sesuai") ? "text-red-700" : "text-green-700"}`}>{importResult.message}</p>
+                  {importResult.errors && importResult.errors.length > 0 && (
+                    <div className="mt-2 max-h-32 overflow-y-auto">
+                      {importResult.errors.map((err, i) => (
+                        <p key={i} className="text-xs text-amber-700">{err}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleImport}
+                disabled={!importFile || importLoading}
+                className="flex-1 bg-sidebar hover:bg-sidebar-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                {importLoading ? (
+                  <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Mengimport...</>
+                ) : (
+                  <><Upload className="w-4 h-4" /> Import Data</>
+                )}
+              </button>
+              <button
+                onClick={() => { setShowImportModal(false); setImportFile(null); setImportResult(null); }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-text-secondary font-semibold py-3 rounded-xl transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Export */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-7">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-text-primary text-lg">Export Data Kendaraan</h3>
+              <button onClick={() => setShowExportModal(false)} className="text-text-secondary hover:text-text-primary"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <p className="text-green-700 text-sm font-medium mb-1">Export ke Excel</p>
+                <p className="text-green-600 text-xs">Data akan diexport sesuai filter yang sedang aktif saat ini.</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs text-text-secondary mb-1">Filter aktif:</p>
+                <p className="text-sm font-semibold text-text-primary">
+                  {filterMode === "harian"
+                    ? `Harian — ${tanggal.split("-").reverse().join("/")}`
+                    : `Bulanan — ${bulan} ${tahun}`
+                  }
+                </p>
+                <p className="text-xs text-text-secondary mt-1">{displayData.length} data akan diexport</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  let url = "http://localhost:5000/api/pergerakan/export";
+                  const params = new URLSearchParams();
+                  if (filterMode === "harian") {
+                    params.set("tanggal", tanggal);
+                  } else {
+                    params.set("bulan", bulan);
+                    params.set("tahun", String(tahun));
+                  }
+                  url += "?" + params.toString();
+                  window.open(url, "_blank");
+                  setShowExportModal(false);
+                }}
+                disabled={displayData.length === 0}
+                className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors"
+              >
+                <Download className="w-4 h-4" /> Download Excel
+              </button>
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-text-secondary font-semibold py-3 rounded-xl transition-colors"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Import Sukses */}
+      {showImportSuccess && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-7 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Upload className="w-8 h-8 text-green-500" />
+            </div>
+            <h3 className="text-text-primary font-bold text-lg mb-2">Import Data Berhasil</h3>
+            <p className="text-text-secondary text-sm mb-6">Data kendaraan berhasil diimport ke dalam sistem.</p>
+            <button
+              onClick={() => setShowImportSuccess(false)}
+              className="w-full bg-sidebar hover:bg-sidebar-hover text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Popup Import Gagal */}
+      {showImportError && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-7 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-text-primary font-bold text-lg mb-2">Import Data Gagal</h3>
+            <p className="text-text-secondary text-sm mb-4">File tidak dapat diimport karena tidak sesuai dengan template yang ditentukan.</p>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-6 text-left">
+              <p className="text-red-700 text-xs font-medium">{showImportError}</p>
+            </div>
+            <button
+              onClick={() => setShowImportError(null)}
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Toast Edit Sukses */}
       {showEditSuccess && (
         <div className="fixed bottom-6 right-6 z-[200] flex items-center gap-3 bg-gray-900 text-white text-sm font-medium px-5 py-3.5 rounded-2xl shadow-2xl">
@@ -311,12 +569,18 @@ export default function PetugasDataKendaraanPage() {
         </div>
         <div className="flex items-center gap-2">
           {importEnabled && (
-            <button className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            >
               <Upload className="w-3.5 h-3.5" /> Import
             </button>
           )}
           {exportEnabled && (
-            <button className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            >
               <Download className="w-3.5 h-3.5" /> Export
             </button>
           )}
@@ -443,6 +707,18 @@ export default function PetugasDataKendaraanPage() {
                 {s === "semua" ? "Semua" : s}
               </button>
             ))}
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative ml-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <input
+              type="text"
+              placeholder="Cari TNKB, trayek, perusahaan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-64"
+            />
           </div>
         </div>
 

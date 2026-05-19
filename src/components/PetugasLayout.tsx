@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LayoutDashboard, ClipboardList, Table2, FileText, BarChart3, Brain, LogOut, Globe, CarFront, UserCircle, Menu, X } from "lucide-react";
 import PetugasDashboardPage from "../views/petugas/PetugasDashboardPage";
 import IsiDataKendaraanPage from "../views/petugas/IsiDataKendaraanPage";
@@ -24,19 +24,33 @@ const menuItems: { id: PetugasMenu; label: string; icon: typeof LayoutDashboard 
 
 interface PetugasLayoutProps {
   onLogout: () => void;
+  onMenuChange?: (menu: string) => void;
+  userName?: string;
 }
 
-export default function PetugasLayout({ onLogout }: PetugasLayoutProps) {
-  const [activeMenu, setActiveMenu] = useState<PetugasMenu>("dashboard");
+export default function PetugasLayout({ onLogout, onMenuChange, userName }: PetugasLayoutProps) {
+  const [activeMenu, setActiveMenu] = useState<PetugasMenu>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("petugas_menu");
+      if (saved && menuItems.some((m) => m.id === saved)) return saved as PetugasMenu;
+    }
+    return "dashboard";
+  });
   const [showConfirm, setShowConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Persist active menu + notify parent for URL update
+  useEffect(() => {
+    sessionStorage.setItem("petugas_menu", activeMenu);
+    onMenuChange?.(activeMenu);
+  }, [activeMenu, onMenuChange]);
 
   const renderPage = () => {
     switch (activeMenu) {
       case "dashboard":
         return <DashboardPage />;
       case "isi-data":
-        return <IsiDataKendaraanPage />;
+        return <IsiDataKendaraanPage userName={userName} />;
       case "data-kendaraan":
         return <PetugasDataKendaraanPage />;
       case "analisis":

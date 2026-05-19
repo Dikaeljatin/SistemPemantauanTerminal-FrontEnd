@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Globe, CarFront, Eye, EyeOff, Lock, Users, ShieldCheck, Briefcase, Crown, ChevronDown, Check } from "lucide-react";
+import { Globe, CarFront, Eye, EyeOff, Lock, Users, ShieldCheck, Briefcase, Crown, ChevronDown, Check, ArrowLeft } from "lucide-react";
 
 export type UserRole = "super_admin" | "petugas" | "pimpinan";
 
 interface LoginPageProps {
-  onLogin: (role: UserRole) => void;
+  onLogin: (role: UserRole, username: string) => void;
+  onBack?: () => void;
 }
 
 const roles: { value: UserRole; label: string; icon: React.ReactNode }[] = [
@@ -15,7 +16,7 @@ const roles: { value: UserRole; label: string; icon: React.ReactNode }[] = [
   { value: "pimpinan",    label: "Pimpinan",    icon: <Crown       className="w-4 h-4" /> },
 ];
 
-export default function LoginPage({ onLogin }: LoginPageProps) {
+export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -66,7 +67,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       }
 
       setIsLoading(false);
-      onLogin(data.user.role as UserRole);
+      onLogin(data.user.role as UserRole, data.user.username || data.user.nama || username.trim());
     } catch (err) {
       setError("Gagal terhubung ke server");
       setIsLoading(false);
@@ -83,6 +84,17 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       </div>
 
       <div className="relative z-10 w-full max-w-md px-6">
+        {/* Back Button */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-white/60 hover:text-white text-sm font-medium mb-6 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Kembali ke Beranda
+          </button>
+        )}
+
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
           <div className="relative mb-4">

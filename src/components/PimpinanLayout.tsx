@@ -15,14 +15,27 @@ const menuItems: { id: PimpinanMenu; label: string; icon: typeof LayoutDashboard
 
 interface PimpinanLayoutProps {
   onLogout: () => void;
+  onMenuChange?: (menu: string) => void;
 }
 
-export default function PimpinanLayout({ onLogout }: PimpinanLayoutProps) {
-  const [activeMenu, setActiveMenu] = useState<PimpinanMenu>("dashboard");
+export default function PimpinanLayout({ onLogout, onMenuChange }: PimpinanLayoutProps) {
+  const [activeMenu, setActiveMenu] = useState<PimpinanMenu>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("pimpinan_menu");
+      if (saved && menuItems.some((m) => m.id === saved)) return saved as PimpinanMenu;
+    }
+    return "dashboard";
+  });
   const [showConfirm, setShowConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Fetch jumlah laporan belum dibaca dari API
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Persist active menu + notify parent for URL update
+  useEffect(() => {
+    sessionStorage.setItem("pimpinan_menu", activeMenu);
+    onMenuChange?.(activeMenu);
+  }, [activeMenu, onMenuChange]);
 
   useEffect(() => {
     fetch("http://localhost:5000/api/laporan")
