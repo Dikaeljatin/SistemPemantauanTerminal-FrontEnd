@@ -1,6 +1,6 @@
 "use client";
 
-import { CarFront, TrendingUp, TrendingDown, Users, CalendarDays, Calendar, Filter, ChevronDown } from "lucide-react";
+import { CarFront, TrendingUp, TrendingDown, Users, CalendarDays, Calendar, Filter, ChevronDown, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -107,19 +107,30 @@ export default function PimpinanDashboardPage() {
     return (selectedBulan === "Semua" || date.getMonth() === bulanIndex[selectedBulan]) && date.getFullYear() === selectedTahun;
   });
 
-  // Pagination
+  // Pagination & Search
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
-  const totalItems = filteredData.length;
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Apply search filter for table
+  const tableData = filteredData.filter((k) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return k.tnkb.toLowerCase().includes(q) || k.trayekAsal.toLowerCase().includes(q) ||
+      k.trayekTujuan.toLowerCase().includes(q) || k.perusahaan.toLowerCase().includes(q) ||
+      k.jenis.toLowerCase().includes(q) || k.timestamp.toLowerCase().includes(q);
+  });
+
+  const totalItems = tableData.length;
   const totalPages = Math.ceil(totalItems / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
-  const paginatedData = filteredData.slice(startIndex, endIndex);
+  const paginatedData = tableData.slice(startIndex, endIndex);
 
   // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterMode, selectedBulan, selectedTahun, selectedTanggal]);
+  }, [filterMode, selectedBulan, selectedTahun, selectedTanggal, searchQuery]);
 
   // Statistik
   const totalKendaraan   = filteredData.length;
@@ -140,6 +151,27 @@ export default function PimpinanDashboardPage() {
     { name: "Kedatangan",    value: totalDatang,    color: "#60a5fa" },
     { name: "Keberangkatan", value: totalBerangkat, color: "#4ade80" },
   ];
+
+  // Data chart — trayek asal terbanyak
+  const trayekAsalCount: Record<string, number> = {};
+  filteredData.forEach((k) => { if (k.trayekAsal) trayekAsalCount[k.trayekAsal] = (trayekAsalCount[k.trayekAsal] || 0) + 1; });
+  const trayekAsalData = Object.entries(trayekAsalCount).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value], i) => ({ name, value, fill: barColors[i % barColors.length] }));
+
+  // Data chart — trayek tujuan terbanyak
+  const trayekTujuanCount: Record<string, number> = {};
+  filteredData.forEach((k) => { if (k.trayekTujuan) trayekTujuanCount[k.trayekTujuan] = (trayekTujuanCount[k.trayekTujuan] || 0) + 1; });
+  const trayekTujuanData = Object.entries(trayekTujuanCount).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value], i) => ({ name, value, fill: barColors[i % barColors.length] }));
+
+  // Data chart — pergerakan per jam
+  const perJamCount: Record<string, { masuk: number; keluar: number }> = {};
+  filteredData.forEach((k) => {
+    const hour = k.timestamp.split(" ")[1]?.split(":")[0] || "00";
+    const jam = `${hour}:00`;
+    if (!perJamCount[jam]) perJamCount[jam] = { masuk: 0, keluar: 0 };
+    if (k.status === "Kedatangan") perJamCount[jam].masuk++;
+    else perJamCount[jam].keluar++;
+  });
+  const perJamData = Object.entries(perJamCount).sort((a, b) => a[0].localeCompare(b[0])).map(([jam, val]) => ({ jam, masuk: val.masuk, keluar: val.keluar }));
 
   // Label filter aktif
   const filterLabel = filterMode === "harian"
@@ -255,6 +287,7 @@ export default function PimpinanDashboardPage() {
               Tidak ada data
             </div>
           ) : (
+            <>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={barData} barSize={44}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
@@ -270,6 +303,10 @@ export default function PimpinanDashboardPage() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            <div className="mt-3 bg-gray-50 rounded-lg p-3">
+              <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Grafik menampilkan distribusi jumlah kendaraan berdasarkan jenis yang beroperasi pada periode yang dipilih.</p>
+            </div>
+            </>
           )}
         </div>
 
@@ -284,6 +321,7 @@ export default function PimpinanDashboardPage() {
               Tidak ada data
             </div>
           ) : (
+            <>
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value" stroke="none">
@@ -296,18 +334,110 @@ export default function PimpinanDashboardPage() {
                 <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: "12px" }} />
               </PieChart>
             </ResponsiveContainer>
+            <div className="mt-3 bg-gray-50 rounded-lg p-3">
+              <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Perbandingan jumlah kendaraan yang datang dan berangkat pada periode yang dipilih.</p>
+            </div>
+            </>
           )}
         </div>
       </div>
 
+      {/* Grafik Baris 2: Trayek Asal & Tujuan */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+          <h3 className="font-bold text-text-primary text-sm mb-4">Trayek Asal Terbanyak</h3>
+          {trayekAsalData.length === 0 ? (
+            <div className="h-48 flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
+          ) : (
+            <>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={trayekAsalData} barSize={32}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v) => [`${v}`, "Jumlah"]} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>{trayekAsalData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-3 bg-gray-50 rounded-lg p-3">
+              <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> 6 trayek asal dengan jumlah kendaraan terbanyak yang masuk ke terminal.</p>
+            </div>
+            </>
+          )}
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+          <h3 className="font-bold text-text-primary text-sm mb-4">Trayek Tujuan Terbanyak</h3>
+          {trayekTujuanData.length === 0 ? (
+            <div className="h-48 flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
+          ) : (
+            <>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={trayekTujuanData} barSize={32}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v) => [`${v}`, "Jumlah"]} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>{trayekTujuanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-3 bg-gray-50 rounded-lg p-3">
+              <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> 6 trayek tujuan dengan jumlah kendaraan terbanyak yang keluar dari terminal.</p>
+            </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Grafik Baris 3: Pergerakan per Jam */}
+      <div className="bg-white rounded-2xl p-6 shadow-md">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-text-primary text-sm">Pergerakan Kendaraan per Jam</h3>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /><span className="text-xs text-text-secondary">Kedatangan</span></div>
+            <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-400 inline-block" /><span className="text-xs text-text-secondary">Keberangkatan</span></div>
+          </div>
+        </div>
+        {perJamData.length === 0 ? (
+          <div className="h-48 flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
+        ) : (
+          <>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={perJamData} barSize={14}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+              <XAxis dataKey="jam" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} />
+              <Bar dataKey="masuk" fill="#60a5fa" radius={[4, 4, 0, 0]} name="Kedatangan" />
+              <Bar dataKey="keluar" fill="#4ade80" radius={[4, 4, 0, 0]} name="Keberangkatan" />
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="mt-3 bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Distribusi jumlah kendaraan yang datang dan berangkat berdasarkan jam operasional terminal.</p>
+          </div>
+          </>
+        )}
+      </div>
+
       {/* Tabel Laporan Petugas */}
       <div className="bg-white rounded-2xl p-6 shadow-md">
-        <h3 className="font-bold text-text-primary text-sm mb-4">
-          Detail Laporan Petugas
-          <span className="ml-2 bg-sidebar/10 text-sidebar text-xs font-semibold px-2 py-0.5 rounded-full">
-            {filteredData.length} data
-          </span>
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-text-primary text-sm">
+            Detail Laporan Petugas
+            <span className="ml-2 bg-sidebar/10 text-sidebar text-xs font-semibold px-2 py-0.5 rounded-full">
+              {tableData.length} data
+            </span>
+          </h3>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <input
+              type="text"
+              placeholder="Cari TNKB, trayek, perusahaan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-64"
+            />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px]">
             <thead>

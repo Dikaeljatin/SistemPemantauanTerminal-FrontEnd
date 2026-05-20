@@ -39,6 +39,7 @@ interface KendaraanRow {
   trayekAsal: string;
   trayekTujuan: string;
   perusahaan: string;
+  createdBy: string;
 }
 
 export default function PetugasDataKendaraanPage() {
@@ -101,6 +102,7 @@ export default function PetugasDataKendaraanPage() {
             trayekAsal: item.trayek_asal || "",
             trayekTujuan: item.trayek_tujuan || "",
             perusahaan: item.nama_perusahaan || "",
+            createdBy: item.created_by || "",
           };
         });
         setKendaraanData(rows);
@@ -161,7 +163,11 @@ export default function PetugasDataKendaraanPage() {
   const handleHapus = async () => {
     if (!hapusId) return;
     try {
-      await fetch(`http://localhost:5000/api/pergerakan/${hapusId}`, { method: "DELETE" });
+      await fetch(`http://localhost:5000/api/pergerakan/${hapusId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleted_by: sessionStorage.getItem("app_username") || "Petugas" }),
+      });
       setKendaraanData((prev) => prev.filter((k) => k.id !== hapusId));
     } catch (err) {
       console.error("Gagal hapus:", err);
@@ -282,6 +288,7 @@ export default function PetugasDataKendaraanPage() {
               trayekAsal: item.trayek_asal || "",
               trayekTujuan: item.trayek_tujuan || "",
               perusahaan: item.nama_perusahaan || "",
+              createdBy: item.created_by || "",
             };
           });
           setKendaraanData(rows);
@@ -771,22 +778,29 @@ export default function PetugasDataKendaraanPage() {
                     <td className="px-4 py-3.5 text-sm text-text-secondary whitespace-nowrap">{k.trayekTujuan}</td>
                     <td className="px-4 py-3.5 text-sm font-medium text-text-primary whitespace-nowrap">{k.perusahaan}</td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => openEdit(k)}
-                          className="p-1.5 text-sidebar hover:text-sidebar-hover hover:bg-sidebar/10 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setHapusId(k.id)}
-                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Hapus"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      {(() => {
+                        const currentUser = typeof window !== "undefined" ? sessionStorage.getItem("app_username") || "" : "";
+                        const isOwner = k.createdBy && currentUser && k.createdBy.toLowerCase() === currentUser.toLowerCase();
+                        if (!isOwner) return <span className="text-xs text-text-secondary italic">—</span>;
+                        return (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => openEdit(k)}
+                              className="p-1.5 text-sidebar hover:text-sidebar-hover hover:bg-sidebar/10 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setHapusId(k.id)}
+                              className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Hapus"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))

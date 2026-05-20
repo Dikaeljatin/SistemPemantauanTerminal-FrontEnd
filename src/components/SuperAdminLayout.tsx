@@ -11,10 +11,10 @@ import LogoutConfirmModal from "./LogoutConfirmModal";
 type SuperAdminMenu = "dashboard" | "kelola-data" | "kelola-user" | "konfigurasi";
 
 const menuItems: { id: SuperAdminMenu; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: "dashboard",    label: "DASHBOARD",    icon: LayoutDashboard },
-  { id: "kelola-data",  label: "KELOLA DATA",  icon: Database        },
-  { id: "kelola-user",  label: "KELOLA USER",  icon: Users           },
-  { id: "konfigurasi",  label: "KONFIGURASI",  icon: Settings        },
+  { id: "dashboard",    label: "DASHBOARD",      icon: LayoutDashboard },
+  { id: "kelola-data",  label: "KELOLA DATA",    icon: Database        },
+  { id: "kelola-user",  label: "KELOLA USER",    icon: Users           },
+  { id: "konfigurasi",  label: "KONFIGURASI",    icon: Settings        },
 ];
 
 interface SuperAdminLayoutProps {
