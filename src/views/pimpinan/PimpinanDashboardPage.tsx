@@ -173,6 +173,21 @@ export default function PimpinanDashboardPage() {
   });
   const perJamData = Object.entries(perJamCount).sort((a, b) => a[0].localeCompare(b[0])).map(([jam, val]) => ({ jam, masuk: val.masuk, keluar: val.keluar }));
 
+  // Data chart — jumlah penumpang per jam (kedatangan vs keberangkatan)
+  const penumpangPerJamCount: Record<string, { datang: number; berangkat: number }> = {};
+  filteredData.forEach((k) => {
+    const hour = k.timestamp.split(" ")[1]?.split(":")[0] || "00";
+    const jam = `${hour}:00`;
+    if (!penumpangPerJamCount[jam]) penumpangPerJamCount[jam] = { datang: 0, berangkat: 0 };
+    penumpangPerJamCount[jam].datang += k.penumpangDatang;
+    penumpangPerJamCount[jam].berangkat += k.penumpangBerangkat;
+  });
+  const penumpangPerJamData = Object.entries(penumpangPerJamCount)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([jam, val]) => ({ jam, datang: val.datang, berangkat: val.berangkat }));
+  const totalPenumpangDatang = filteredData.reduce((s, k) => s + k.penumpangDatang, 0);
+  const totalPenumpangBerangkat = filteredData.reduce((s, k) => s + k.penumpangBerangkat, 0);
+
   // Label filter aktif
   const filterLabel = filterMode === "harian"
     ? selectedTanggal.split("-").reverse().join("/")
@@ -413,6 +428,44 @@ export default function PimpinanDashboardPage() {
           </ResponsiveContainer>
           <div className="mt-3 bg-gray-50 rounded-lg p-3">
             <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Distribusi jumlah kendaraan yang datang dan berangkat berdasarkan jam operasional terminal.</p>
+          </div>
+          </>
+        )}
+      </div>
+
+      {/* Grafik Baris 4: Jumlah Penumpang per Jam */}
+      <div className="bg-white rounded-2xl p-6 shadow-md">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-text-primary text-sm">Jumlah Penumpang per Jam</h3>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /><span className="text-xs text-text-secondary">Kedatangan</span></div>
+            <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block" /><span className="text-xs text-text-secondary">Keberangkatan</span></div>
+          </div>
+        </div>
+        {penumpangPerJamData.length === 0 || (totalPenumpangDatang === 0 && totalPenumpangBerangkat === 0) ? (
+          <div className="h-48 flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
+        ) : (
+          <>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={penumpangPerJamData} barSize={14}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+              <XAxis dataKey="jam" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip
+                cursor={{ fill: "rgba(0,0,0,0.04)" }}
+                contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }}
+                formatter={(v, n) => [`${v} penumpang`, n === "datang" ? "Kedatangan" : "Keberangkatan"]}
+              />
+              <Bar dataKey="datang" fill="#60a5fa" radius={[4, 4, 0, 0]} name="datang" />
+              <Bar dataKey="berangkat" fill="#fbbf24" radius={[4, 4, 0, 0]} name="berangkat" />
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="mt-3 bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-text-secondary">
+              <span className="font-semibold text-text-primary">Keterangan:</span> Distribusi jumlah penumpang yang datang dan berangkat berdasarkan jam operasional.
+              {" "}Total kedatangan: <span className="font-semibold text-text-primary">{totalPenumpangDatang}</span> penumpang,
+              {" "}keberangkatan: <span className="font-semibold text-text-primary">{totalPenumpangBerangkat}</span> penumpang.
+            </p>
           </div>
           </>
         )}

@@ -31,16 +31,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/layout.js"
     ],
-    "/(dashboard)/petugas/dashboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/petugas/dashboard/page.js"
-    ],
-    "/(dashboard)/petugas/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/petugas/layout.js"
-    ],
     "/(auth)/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -51,45 +41,65 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(auth)/layout.js"
     ],
-    "/(dashboard)/petugas/data-kendaraan/page": [
+    "/(dashboard)/petugas/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/petugas/data-kendaraan/page.js"
+      "static/chunks/app/(dashboard)/petugas/dashboard/page.js"
+    ],
+    "/(dashboard)/petugas/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/petugas/layout.js"
     ],
     "/(dashboard)/petugas/isi-data/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/petugas/isi-data/page.js"
     ],
-    "/(dashboard)/super-admin/kelola-data/page": [
+    "/(dashboard)/petugas/data-kendaraan/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/super-admin/kelola-data/page.js"
+      "static/chunks/app/(dashboard)/petugas/data-kendaraan/page.js"
     ],
-    "/(dashboard)/super-admin/kelola-user/page": [
+    "/(dashboard)/petugas/analisis/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/super-admin/kelola-user/page.js"
+      "static/chunks/app/(dashboard)/petugas/analisis/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/_not-found/page.js"
     ],
-    "/(dashboard)/super-admin/konfigurasi/page": [
+    "/(dashboard)/petugas/prediksi/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/super-admin/konfigurasi/page.js"
+      "static/chunks/app/(dashboard)/petugas/prediksi/page.js"
     ],
     "/(dashboard)/petugas/laporan/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/petugas/laporan/page.js"
     ],
-    "/(dashboard)/petugas/analisis/page": [
+    "/(dashboard)/super-admin/kelola-user/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/petugas/analisis/page.js"
+      "static/chunks/app/(dashboard)/super-admin/kelola-user/page.js"
+    ],
+    "/(dashboard)/super-admin/kelola-data/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/super-admin/kelola-data/page.js"
+    ],
+    "/(dashboard)/pimpinan/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/pimpinan/dashboard/page.js"
+    ],
+    "/(dashboard)/pimpinan/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/pimpinan/layout.js"
     ]
   }
 }

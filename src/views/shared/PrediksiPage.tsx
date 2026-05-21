@@ -5,7 +5,7 @@ import {
   Brain, CarFront, ArrowDownLeft, ArrowUpRight, Clock, Users, CalendarDays, Search, TrendingUp, Info,
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 
 interface PredictionRow {
@@ -286,7 +286,7 @@ export default function PrediksiPage() {
               <BarChart data={predictions} barSize={16}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="jam" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip
                   cursor={{ fill: "rgba(0,0,0,0.04)" }}
                   contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)", fontSize: "12px", padding: "10px 14px" }}
@@ -299,7 +299,7 @@ export default function PrediksiPage() {
             <div className="mt-3 bg-gray-50 rounded-lg p-3">
               <p className="text-xs text-text-secondary">
                 <span className="font-semibold text-text-primary">Keterangan:</span>{" "}
-                Grafik menampilkan prediksi rata-rata kendaraan kedatangan dan keberangkatan per jam berdasarkan data historis menggunakan metode Prophet (Meta).
+                Grafik menampilkan total prediksi kendaraan kedatangan dan keberangkatan per jam selama periode prediksi, berdasarkan data historis menggunakan metode Prophet (Meta).
                 Puncak kedatangan: <span className="font-semibold text-text-primary">{summary?.jam_tersibuk_masuk}</span>,
                 puncak keberangkatan: <span className="font-semibold text-text-primary">{summary?.jam_tersibuk_keluar}</span>.
               </p>
@@ -331,7 +331,7 @@ export default function PrediksiPage() {
               <BarChart data={predictions} barSize={18}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="jam" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip
                   cursor={{ fill: "rgba(0,0,0,0.04)" }}
                   contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)", fontSize: "12px", padding: "10px 14px" }}
@@ -343,46 +343,13 @@ export default function PrediksiPage() {
             <div className="mt-3 bg-gray-50 rounded-lg p-3">
               <p className="text-xs text-text-secondary">
                 <span className="font-semibold text-text-primary">Keterangan:</span>{" "}
-                Grafik menampilkan prediksi rata-rata jumlah penumpang per jam menggunakan metode Prophet.
+                Grafik menampilkan total prediksi jumlah penumpang per jam selama periode prediksi menggunakan metode Prophet.
                 Total penumpang yang diprediksi: <span className="font-semibold text-text-primary">{summary?.total_penumpang}</span> orang.
               </p>
             </div>
           </>
         )}
       </div>
-
-      {/* Grafik Prediksi per Hari (Line Chart) */}
-      {hasPredict && perDay.length > 1 && (
-        <div className="bg-white rounded-2xl p-6 shadow-md">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-text-primary text-sm">Tren Prediksi per Hari</h3>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /><span className="text-xs text-text-secondary">Kedatangan</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-400 inline-block" /><span className="text-xs text-text-secondary">Keberangkatan</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block" /><span className="text-xs text-text-secondary">Penumpang</span></div>
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={perDay}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-              <XAxis dataKey="tanggal" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} />
-              <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: "12px" }} />
-              <Line type="monotone" dataKey="masuk" stroke="#60a5fa" strokeWidth={2} dot={{ r: 3 }} name="Kedatangan" />
-              <Line type="monotone" dataKey="keluar" stroke="#f87171" strokeWidth={2} dot={{ r: 3 }} name="Keberangkatan" />
-              <Line type="monotone" dataKey="penumpang" stroke="#fbbf24" strokeWidth={2} dot={{ r: 3 }} name="Penumpang" />
-            </LineChart>
-          </ResponsiveContainer>
-          <div className="mt-3 bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-text-secondary">
-              <span className="font-semibold text-text-primary">Keterangan:</span>{" "}
-              Tren prediksi total kendaraan kedatangan, keberangkatan, dan penumpang per hari pada periode yang dipilih.
-              Prediksi mempertimbangkan hari libur Indonesia dan pola weekly seasonality dari data 12 bulan terakhir.
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
