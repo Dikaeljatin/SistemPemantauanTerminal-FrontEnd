@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import "../index.css";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dashboard Manajemen Kendaraan",
-  description: "Dashboard untuk manajemen kendaraan",
+  title: "Sistem Monitoring Terminal ABDYA",
+  description: "Sistem monitoring pergerakan kendaraan Terminal Aceh Barat Daya",
 };
 
 export default function RootLayout({

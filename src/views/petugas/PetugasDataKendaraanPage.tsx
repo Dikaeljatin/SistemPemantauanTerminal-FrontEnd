@@ -157,6 +157,7 @@ export default function PetugasDataKendaraanPage() {
   const [editItem, setEditItem] = useState<KendaraanRow | null>(null);
   const [editForm, setEditForm] = useState({ tnkb: "", trayekAsal: "", trayekTujuan: "", jumlah_penumpang: "", status_pergerakan: "", timestamp: "", perusahaan: "" });
   const [showEditSuccess, setShowEditSuccess] = useState(false);
+  const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
 
   const [showEditConfirm, setShowEditConfirm] = useState(false);
 
@@ -169,6 +170,8 @@ export default function PetugasDataKendaraanPage() {
         body: JSON.stringify({ deleted_by: sessionStorage.getItem("app_username") || "Petugas" }),
       });
       setKendaraanData((prev) => prev.filter((k) => k.id !== hapusId));
+      setShowDeleteSuccess(true);
+      setTimeout(() => setShowDeleteSuccess(false), 3000);
     } catch (err) {
       console.error("Gagal hapus:", err);
     }
@@ -482,6 +485,15 @@ export default function PetugasDataKendaraanPage() {
           <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
           Data kendaraan berhasil diperbarui!
           <button onClick={() => setShowEditSuccess(false)} className="ml-2 text-white/50 hover:text-white"><X className="w-4 h-4" /></button>
+        </div>
+      )}
+
+      {/* Toast Hapus Sukses */}
+      {showDeleteSuccess && (
+        <div className="fixed bottom-6 right-6 z-[200] flex items-center gap-3 bg-gray-900 text-white text-sm font-medium px-5 py-3.5 rounded-2xl shadow-2xl">
+          <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
+          Data kendaraan berhasil dihapus!
+          <button onClick={() => setShowDeleteSuccess(false)} className="ml-2 text-white/50 hover:text-white"><X className="w-4 h-4" /></button>
         </div>
       )}
 

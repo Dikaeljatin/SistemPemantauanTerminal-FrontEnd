@@ -159,7 +159,6 @@ function FormView({
     if (!form.trayekTujuan)           e.trayekTujuan       = "Wajib dipilih";
     if (form.trayekAsal && form.trayekTujuan && form.trayekAsal === form.trayekTujuan)
                                       e.trayekTujuan       = "Trayek tujuan tidak boleh sama dengan trayek asal";
-    if (!form.perusahaan.trim())      e.perusahaan         = "Wajib diisi";
     return e;
   };
 
@@ -180,7 +179,7 @@ function FormView({
         tnkb: form.tnkb,
         jenis_kendaraan: form.jenis,
         kapasitas_mobil: form.kapasitas ? parseInt(form.kapasitas) : null,
-        nama_perusahaan: form.perusahaan,
+        nama_perusahaan: form.perusahaan.trim() || "-",
         status_pergerakan: mode === "kedatangan" ? "kedatangan" : "keberangkatan",
         jumlah_penumpang: mode === "kedatangan"
           ? parseInt(form.penumpangDatang || "0")
@@ -478,7 +477,7 @@ function FormView({
               type="text"
               value={form.perusahaan}
               onChange={(e) => set("perusahaan", e.target.value)}
-              placeholder="Contoh: PO Kurnia"
+              placeholder="Kosongkan jika tidak ada"
               className={inputCls(!!errors.perusahaan)}
             />
           </Field>
