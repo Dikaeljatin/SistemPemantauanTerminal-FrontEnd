@@ -1,11 +1,12 @@
 "use client";
 
-import { Settings, Upload, Download } from "lucide-react";
+import { Settings, Upload, Download, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function KonfigurasiPage() {
   const [importEnabled, setImportEnabled] = useState(false);
   const [exportEnabled, setExportEnabled] = useState(false);
+  const [prediksiEnabled, setPrediksiEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,6 +16,7 @@ export default function KonfigurasiPage() {
         const config = json.data || {};
         setImportEnabled(config.import_enabled === "true");
         setExportEnabled(config.export_enabled === "true");
+        setPrediksiEnabled(config.prediksi_enabled !== "false"); // default aktif
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -42,6 +44,12 @@ export default function KonfigurasiPage() {
     const newVal = !exportEnabled;
     setExportEnabled(newVal);
     toggleConfig("export_enabled", newVal);
+  };
+
+  const handlePrediksiToggle = () => {
+    const newVal = !prediksiEnabled;
+    setPrediksiEnabled(newVal);
+    toggleConfig("prediksi_enabled", newVal);
   };
 
   if (loading) return <div className="flex items-center justify-center h-64 text-text-secondary">Memuat...</div>;
@@ -99,6 +107,25 @@ export default function KonfigurasiPage() {
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${exportEnabled ? "translate-x-6" : "translate-x-0"}`} />
             </button>
           </div>
+
+          {/* Prediksi Toggle */}
+          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary text-sm">Fitur Prediksi</p>
+                <p className="text-xs text-text-secondary mt-0.5">Petugas dapat mengakses fitur prediksi kendaraan & penumpang</p>
+              </div>
+            </div>
+            <button
+              onClick={handlePrediksiToggle}
+              className={`relative w-12 h-6 rounded-full transition-colors ${prediksiEnabled ? "bg-sidebar" : "bg-gray-300"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${prediksiEnabled ? "translate-x-6" : "translate-x-0"}`} />
+            </button>
+          </div>
         </div>
 
         {/* Status Info */}
@@ -108,6 +135,8 @@ export default function KonfigurasiPage() {
             Import {importEnabled ? <span className="text-green-600 font-semibold">Aktif</span> : <span className="text-red-500 font-semibold">Nonaktif</span>}
             {" • "}
             Export {exportEnabled ? <span className="text-green-600 font-semibold">Aktif</span> : <span className="text-red-500 font-semibold">Nonaktif</span>}
+            {" • "}
+            Prediksi {prediksiEnabled ? <span className="text-green-600 font-semibold">Aktif</span> : <span className="text-red-500 font-semibold">Nonaktif</span>}
           </p>
         </div>
       </div>

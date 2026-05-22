@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Brain, CarFront, ArrowDownLeft, ArrowUpRight, Clock, Users, CalendarDays, Search, TrendingUp, Info,
 } from "lucide-react";
@@ -61,6 +61,39 @@ export default function PrediksiPage() {
   const [accuracy, setAccuracy] = useState<AccuracyInfo | null>(null);
   const [meta, setMeta] = useState<MetaInfo | null>(null);
   const [hasPredict, setHasPredict] = useState(false);
+
+  // Cek konfigurasi prediksi
+  const [prediksiEnabled, setPrediksiEnabled] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch("http://localhost:5000/api/konfigurasi")
+      .then((res) => res.json())
+      .then((json) => {
+        const config = json.data || {};
+        setPrediksiEnabled(config.prediksi_enabled !== "false");
+      })
+      .catch(() => setPrediksiEnabled(true));
+  }, []);
+
+  if (prediksiEnabled === false) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-sidebar rounded-2xl px-8 py-5 flex items-center gap-4 shadow-lg">
+          <Brain className="w-8 h-8 text-white" />
+          <div>
+            <h2 className="text-white font-bold text-xl tracking-wide">PREDIKSI KENDARAAN</h2>
+            <p className="text-white/60 text-sm mt-0.5">Fitur prediksi saat ini dinonaktifkan</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl p-10 shadow-md text-center">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Info className="w-8 h-8 text-red-400" />
+          </div>
+          <h3 className="text-lg font-bold text-text-primary mb-2">Fitur Prediksi Tidak Tersedia</h3>
+          <p className="text-text-secondary text-sm">Fitur prediksi sedang dinonaktifkan oleh administrator. Silakan hubungi super admin untuk informasi lebih lanjut.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handlePrediksi = async () => {
     if (!tanggalMulai || !tanggalAkhir) {

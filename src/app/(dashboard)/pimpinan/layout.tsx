@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { LayoutDashboard, Inbox, LogOut, Globe, CarFront, UserCircle, Crown, Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
 import LogoutConfirmModal from "../../../components/layout/LogoutConfirmModal";
+import EditProfileModal from "../../../components/shared/EditProfileModal";
 
 const menuItems = [
   { id: "dashboard",     label: "DASHBOARD",    icon: LayoutDashboard, href: "/pimpinan/dashboard" },
@@ -17,6 +18,8 @@ export default function PimpinanLayout({ children }: { children: React.ReactNode
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showProfile, setShowProfile] = useState(false);
+  const [userInfo, setUserInfo] = useState<{ id: number; nama: string; email: string; username: string } | null>(null);
 
   useEffect(() => {
     fetch("http://localhost:5000/api/laporan")
@@ -24,6 +27,19 @@ export default function PimpinanLayout({ children }: { children: React.ReactNode
       .then((json) => { setUnreadCount((json.data || []).filter((l: any) => l.status === "belum-dibaca").length); })
       .catch(() => setUnreadCount(0));
   }, [pathname]);
+
+  useEffect(() => {
+    const username = typeof window !== "undefined" ? sessionStorage.getItem("app_username") : null;
+    if (username) {
+      fetch("http://localhost:5000/api/users")
+        .then((res) => res.json())
+        .then((json) => {
+          const user = (json.data || []).find((u: any) => u.username === username);
+          if (user) setUserInfo({ id: user.user_id, nama: user.nama, email: user.email || "", username: user.username });
+        })
+        .catch(() => {});
+    }
+  }, []);
 
   const handleLogout = () => { sessionStorage.clear(); router.push("/"); };
 
@@ -79,8 +95,26 @@ export default function PimpinanLayout({ children }: { children: React.ReactNode
       <div className={`flex-1 ${collapsed ? "ml-0 md:ml-20" : "ml-0 md:ml-64"} flex flex-col transition-all duration-300`}>
         <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-bg">
           <button onClick={() => setSidebarOpen(true)} className="md:hidden w-10 h-10 bg-sidebar text-white rounded-lg flex items-center justify-center shadow-lg"><Menu className="w-5 h-5" /></button>
-          <div className="flex items-center gap-3 ml-auto"><div className="text-right"><p className="font-bold text-text-primary text-sm tracking-wide">PIMPINAN</p><p className="text-xs text-text-secondary">Terminal ABDYA</p></div><div className="w-10 h-10 rounded-full border-2 border-text-primary flex items-center justify-center"><UserCircle className="w-7 h-7 text-text-primary" /></div></div>
+          <div className="flex items-center gap-3 ml-auto cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setShowProfile(true)}>
+            <div className="text-right">
+              <p className="font-bold text-text-primary text-sm tracking-wide">{userInfo?.nama || "PIMPINAN"}</p>
+              <p className="text-xs text-text-secondary">Pimpinan</p>
+            </div>
+            <div className="w-10 h-10 rounded-full border-2 border-text-primary flex items-center justify-center"><UserCircle className="w-7 h-7 text-text-primary" /></div>
+          </div>
         </header>
+
+        {showProfile && userInfo && (
+          <EditProfileModal
+            userId={userInfo.id}
+            currentNama={userInfo.nama}
+            currentEmail={userInfo.email}
+            currentUsername={userInfo.username}
+            role="pimpinan"
+            onClose={() => setShowProfile(false)}
+            onSaved={(newNama) => setUserInfo({ ...userInfo, nama: newNama })}
+          />
+        )}
         <main className="px-4 md:px-8 pb-8">{children}</main>
       </div>
     </div>
