@@ -76,6 +76,17 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-sidebar relative overflow-hidden">
+      {/* Back Button - pojok kiri atas */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white/70 hover:text-white text-base font-semibold transition-colors bg-white/10 hover:bg-white/20 px-4 py-2.5 rounded-xl"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Kembali
+        </button>
+      )}
+
       {/* Decorative background elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-accent/5 rounded-full blur-3xl"></div>
@@ -84,17 +95,6 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
       </div>
 
       <div className="relative z-10 w-full max-w-md px-6">
-        {/* Back Button */}
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-white/60 hover:text-white text-sm font-medium mb-6 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Kembali ke Beranda
-          </button>
-        )}
-
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
           <div className="relative mb-4">

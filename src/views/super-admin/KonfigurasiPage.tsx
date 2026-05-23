@@ -129,15 +129,31 @@ export default function KonfigurasiPage() {
         </div>
 
         {/* Status Info */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-          <p className="text-xs text-text-secondary">
-            <span className="font-semibold text-text-primary">Status saat ini:</span>{" "}
-            Import {importEnabled ? <span className="text-green-600 font-semibold">Aktif</span> : <span className="text-red-500 font-semibold">Nonaktif</span>}
-            {" • "}
-            Export {exportEnabled ? <span className="text-green-600 font-semibold">Aktif</span> : <span className="text-red-500 font-semibold">Nonaktif</span>}
-            {" • "}
-            Prediksi {prediksiEnabled ? <span className="text-green-600 font-semibold">Aktif</span> : <span className="text-red-500 font-semibold">Nonaktif</span>}
-          </p>
+        <div className="mt-6 p-5 bg-gray-50 rounded-xl">
+          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Status Fitur</p>
+          <div className="grid grid-cols-3 gap-3">
+            <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg ${importEnabled ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+              <div className={`w-2 h-2 rounded-full ${importEnabled ? "bg-green-500" : "bg-red-400"}`} />
+              <div>
+                <p className="text-xs font-semibold text-text-primary">Import</p>
+                <p className={`text-[10px] font-medium ${importEnabled ? "text-green-600" : "text-red-500"}`}>{importEnabled ? "Aktif" : "Nonaktif"}</p>
+              </div>
+            </div>
+            <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg ${exportEnabled ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+              <div className={`w-2 h-2 rounded-full ${exportEnabled ? "bg-green-500" : "bg-red-400"}`} />
+              <div>
+                <p className="text-xs font-semibold text-text-primary">Export</p>
+                <p className={`text-[10px] font-medium ${exportEnabled ? "text-green-600" : "text-red-500"}`}>{exportEnabled ? "Aktif" : "Nonaktif"}</p>
+              </div>
+            </div>
+            <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg ${prediksiEnabled ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+              <div className={`w-2 h-2 rounded-full ${prediksiEnabled ? "bg-green-500" : "bg-red-400"}`} />
+              <div>
+                <p className="text-xs font-semibold text-text-primary">Prediksi</p>
+                <p className={`text-[10px] font-medium ${prediksiEnabled ? "text-green-600" : "text-red-500"}`}>{prediksiEnabled ? "Aktif" : "Nonaktif"}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,8 +1,7 @@
 {
   "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(dashboard)/super-admin/konfigurasi/page": "app/(dashboard)/super-admin/konfigurasi/page.js",
-  "/(dashboard)/petugas/prediksi/page": "app/(dashboard)/petugas/prediksi/page.js",
   "/(dashboard)/super-admin/kelola-data/page": "app/(dashboard)/super-admin/kelola-data/page.js",
-  "/(dashboard)/petugas/dashboard/page": "app/(dashboard)/petugas/dashboard/page.js",
-  "/(dashboard)/super-admin/kelola-user/page": "app/(dashboard)/super-admin/kelola-user/page.js"
+  "/(dashboard)/pimpinan/dashboard/page": "app/(dashboard)/pimpinan/dashboard/page.js",
+  "/(dashboard)/petugas/analisis/page": "app/(dashboard)/petugas/analisis/page.js",
+  "/(dashboard)/pimpinan/laporan-masuk/page": "app/(dashboard)/pimpinan/laporan-masuk/page.js"
 }
