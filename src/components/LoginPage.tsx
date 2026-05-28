@@ -66,8 +66,17 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
         return;
       }
 
+      // Validasi: pastikan role yang dipilih sesuai dengan role akun
+      const actualRole = data.user.role as UserRole;
+      if (actualRole !== selectedRole) {
+        const roleLabel = roles.find((r) => r.value === actualRole)?.label || actualRole;
+        setError(`Akun ini terdaftar sebagai ${roleLabel}, bukan ${activeRole.label}. Silakan pilih role yang sesuai.`);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(false);
-      onLogin(data.user.role as UserRole, data.user.username || data.user.nama || username.trim());
+      onLogin(actualRole, data.user.username || data.user.nama || username.trim());
     } catch (err) {
       setError("Gagal terhubung ke server");
       setIsLoading(false);

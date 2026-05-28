@@ -1,8 +1,5 @@
 {
-  "/(dashboard)/pimpinan/laporan-masuk/page": "app/(dashboard)/pimpinan/laporan-masuk/page.js",
-  "/(dashboard)/petugas/laporan/page": "app/(dashboard)/petugas/laporan/page.js",
-  "/(dashboard)/super-admin/kelola-user/page": "app/(dashboard)/super-admin/kelola-user/page.js",
-  "/(dashboard)/pimpinan/dashboard/page": "app/(dashboard)/pimpinan/dashboard/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
   "/(dashboard)/super-admin/dashboard/page": "app/(dashboard)/super-admin/dashboard/page.js",
   "/(dashboard)/super-admin/kelola-data/page": "app/(dashboard)/super-admin/kelola-data/page.js"
 }
