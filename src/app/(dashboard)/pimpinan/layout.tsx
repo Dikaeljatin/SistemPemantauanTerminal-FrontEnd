@@ -22,10 +22,17 @@ export default function PimpinanLayout({ children }: { children: React.ReactNode
   const [userInfo, setUserInfo] = useState<{ id: number; nama: string; email: string; username: string } | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/laporan")
-      .then((res) => res.json())
-      .then((json) => { setUnreadCount((json.data || []).filter((l: any) => l.status === "belum-dibaca").length); })
-      .catch(() => setUnreadCount(0));
+    const fetchUnread = () => {
+      fetch("http://localhost:5000/api/laporan")
+        .then((res) => res.json())
+        .then((json) => { setUnreadCount((json.data || []).filter((l: any) => l.status === "belum-dibaca").length); })
+        .catch(() => setUnreadCount(0));
+    };
+
+    fetchUnread();
+    // Polling setiap 30 detik untuk notifikasi real-time
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
   }, [pathname]);
 
   useEffect(() => {

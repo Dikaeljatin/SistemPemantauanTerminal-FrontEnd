@@ -1,6 +1,6 @@
 "use client";
 
-import { CarFront, TrendingUp, TrendingDown, Users, CalendarDays, Calendar, Filter, ChevronDown, Search } from "lucide-react";
+import { CarFront, TrendingUp, TrendingDown, Users, CalendarDays, Calendar, Filter, ChevronDown, Search, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -55,6 +55,7 @@ type FilterMode = "harian" | "bulanan";
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PimpinanDashboardPage() {
   const [laporanData, setLaporanData] = useState<LaporanRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterMode, setFilterMode] = useState<FilterMode>("bulanan");
   const [selectedBulan, setSelectedBulan] = useState("Mei");
   const [selectedTahun, setSelectedTahun] = useState(new Date().getFullYear());
@@ -66,6 +67,7 @@ export default function PimpinanDashboardPage() {
 
   // Fetch data dari API
   useEffect(() => {
+    setIsLoading(true);
     fetch("http://localhost:5000/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
@@ -94,7 +96,8 @@ export default function PimpinanDashboardPage() {
         });
         setLaporanData(rows);
       })
-      .catch((err) => console.error("Gagal fetch:", err));
+      .catch((err) => console.error("Gagal fetch:", err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   // Filter data
@@ -203,6 +206,13 @@ export default function PimpinanDashboardPage() {
           <p className="text-white/60 text-sm mt-0.5">Ringkasan laporan pergerakan kendaraan dari petugas</p>
         </div>
       </div>
+
+      {isLoading && (
+        <div className="bg-white rounded-2xl p-8 shadow-md flex items-center justify-center gap-3">
+          <Loader2 className="w-6 h-6 text-sidebar animate-spin" />
+          <span className="text-text-secondary text-sm">Memuat data dashboard...</span>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="bg-white rounded-2xl px-6 py-4 shadow-md flex flex-wrap items-center gap-3">
@@ -473,25 +483,26 @@ export default function PimpinanDashboardPage() {
 
       {/* Tabel Laporan Petugas */}
       <div className="bg-white rounded-2xl p-6 shadow-md">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h3 className="font-bold text-text-primary text-sm">
             Detail Laporan Petugas
             <span className="ml-2 bg-sidebar/10 text-sidebar text-xs font-semibold px-2 py-0.5 rounded-full">
               {tableData.length} data
             </span>
           </h3>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input
               type="text"
               placeholder="Cari TNKB, trayek, perusahaan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-64"
+              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-full sm:w-64"
             />
           </div>
         </div>
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[1100px]">
             <thead>
               <tr className="border-b border-gray-200">
@@ -536,9 +547,52 @@ export default function PimpinanDashboardPage() {
           </table>
         </div>
 
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-3">
+          {paginatedData.length === 0 ? (
+            <div className="py-10 text-center text-sm text-text-secondary">Tidak ada laporan untuk {filterLabel}.</div>
+          ) : (
+            paginatedData.map((k, idx) => (
+              <div key={k.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-secondary font-semibold">#{startIndex + idx + 1}</span>
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${k.status === "Kedatangan" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>{k.status}</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-baseline gap-2">
+                    <p className="font-bold text-text-primary text-base">{k.tnkb}</p>
+                    <span className="text-xs text-text-secondary">{k.jenis}</span>
+                  </div>
+                  <p className="text-xs text-text-secondary">{k.timestamp}</p>
+                  <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Asal</p>
+                      <p className="text-sm text-text-primary">{k.trayekAsal || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Tujuan</p>
+                      <p className="text-sm text-text-primary">{k.trayekTujuan || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Penumpang</p>
+                      <p className="text-sm text-text-primary">{k.penumpangDatang || k.penumpangBerangkat || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Perusahaan</p>
+                      <p className="text-sm text-text-primary">{k.perusahaan || "-"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-5 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-4">
               <span className="text-sm text-text-secondary">
                 Menampilkan {startIndex + 1}–{Math.min(endIndex, totalItems)} dari {totalItems} data

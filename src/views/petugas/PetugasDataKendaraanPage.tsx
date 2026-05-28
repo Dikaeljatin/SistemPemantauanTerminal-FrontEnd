@@ -1,6 +1,6 @@
 "use client";
 
-import { CarFront, Filter, ChevronDown, Calendar, Trash2, Pencil, X, Upload, Download, FileSpreadsheet, Search } from "lucide-react";
+import { CarFront, Filter, ChevronDown, Calendar, Trash2, Pencil, X, Upload, Download, FileSpreadsheet, Search, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const bulanList = [
@@ -44,6 +44,7 @@ interface KendaraanRow {
 
 export default function PetugasDataKendaraanPage() {
   const [kendaraanData, setKendaraanData] = useState<KendaraanRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterMode, setFilterMode] = useState<"bulanan" | "harian">("bulanan");
   const [bulan, setBulan] = useState("Januari");
   const [tahun, setTahun] = useState(new Date().getFullYear());
@@ -76,6 +77,7 @@ export default function PetugasDataKendaraanPage() {
 
   // Fetch data dari API
   useEffect(() => {
+    setIsLoading(true);
     fetch("http://localhost:5000/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
@@ -107,7 +109,8 @@ export default function PetugasDataKendaraanPage() {
         });
         setKendaraanData(rows);
       })
-      .catch((err) => console.error("Gagal fetch data:", err));
+      .catch((err) => console.error("Gagal fetch data:", err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   // Pagination
@@ -729,20 +732,21 @@ export default function PetugasDataKendaraanPage() {
           </div>
 
           {/* Search Bar */}
-          <div className="relative ml-auto">
+          <div className="relative ml-0 sm:ml-auto w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input
               type="text"
               placeholder="Cari TNKB, trayek, perusahaan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-64"
+              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-full sm:w-64"
             />
           </div>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[1000px]">
             <thead>
               <tr className="border-b border-gray-200">
@@ -760,7 +764,16 @@ export default function PetugasDataKendaraanPage() {
               </tr>
             </thead>
             <tbody>
-              {paginatedData.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={11} className="px-4 py-12 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+                      <span className="text-text-secondary text-sm">Memuat data kendaraan...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-4 py-10 text-center text-sm text-text-secondary">
                     Tidak ada data yang sesuai filter.
@@ -821,9 +834,67 @@ export default function PetugasDataKendaraanPage() {
           </table>
         </div>
 
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-3">
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2 py-12">
+              <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+              <span className="text-text-secondary text-sm">Memuat data kendaraan...</span>
+            </div>
+          ) : paginatedData.length === 0 ? (
+            <div className="py-10 text-center text-sm text-text-secondary">Tidak ada data yang sesuai filter.</div>
+          ) : (
+            paginatedData.map((k, idx) => {
+              const currentUser = typeof window !== "undefined" ? sessionStorage.getItem("app_username") || "" : "";
+              const isOwner = k.createdBy && currentUser && k.createdBy.toLowerCase() === currentUser.toLowerCase();
+              return (
+                <div key={k.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-text-secondary font-semibold">#{startIndex + idx + 1}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${k.status === "Kedatangan" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>{k.status}</span>
+                    </div>
+                    {isOwner && (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openEdit(k)} className="p-1.5 text-sidebar hover:bg-sidebar/10 rounded-lg" title="Edit"><Pencil className="w-4 h-4" /></button>
+                        <button onClick={() => setHapusId(k.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg" title="Hapus"><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-baseline gap-2">
+                      <p className="font-bold text-text-primary text-base">{k.tnkb}</p>
+                      <span className="text-xs text-text-secondary">{k.jenis}</span>
+                    </div>
+                    <p className="text-xs text-text-secondary">{k.timestamp}</p>
+                    <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Asal</p>
+                        <p className="text-sm text-text-primary">{k.trayekAsal || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Tujuan</p>
+                        <p className="text-sm text-text-primary">{k.trayekTujuan || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Penumpang</p>
+                        <p className="text-sm text-text-primary">{k.penumpangDatang || k.penumpangBerangkat || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Perusahaan</p>
+                        <p className="text-sm text-text-primary">{k.perusahaan || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-5 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-4">
               <span className="text-sm text-text-secondary">
                 Menampilkan {startIndex + 1}–{Math.min(endIndex, totalItems)} dari {totalItems} data

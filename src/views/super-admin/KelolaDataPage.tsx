@@ -1,6 +1,6 @@
 "use client";
 
-import { Tag, Plus, Trash2, Pencil, X, Database, Search, Filter, ChevronDown, Calendar, Activity, Clock } from "lucide-react";
+import { Tag, Plus, Trash2, Pencil, X, Database, Search, Filter, ChevronDown, Calendar, Activity, Clock, Loader2, Send } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface JenisKendaraan {
@@ -56,6 +56,7 @@ export default function KelolaDataPage() {
 
   // Data Pergerakan state
   const [pergerakanData, setPergerakanData] = useState<PergerakanRow[]>([]);
+  const [isLoadingPergerakan, setIsLoadingPergerakan] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMode, setFilterMode] = useState<"bulanan" | "harian">("bulanan");
   const [bulan, setBulan] = useState("Semua");
@@ -74,6 +75,7 @@ export default function KelolaDataPage() {
   }, []);
 
   useEffect(() => {
+    setIsLoadingPergerakan(true);
     fetch("http://localhost:5000/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
@@ -105,14 +107,15 @@ export default function KelolaDataPage() {
         });
         setPergerakanData(rows);
       })
-      .catch(() => setPergerakanData([]));
+      .catch(() => setPergerakanData([]))
+      .finally(() => setIsLoadingPergerakan(false));
   }, []);
 
   // Activity log state
   interface ActivityItem { id: number; username: string; action: string; description: string; detail: string | null; created_at: string; }
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [actSearchQuery, setActSearchQuery] = useState("");
-  const [actFilterAction, setActFilterAction] = useState<"semua" | "create" | "update" | "delete">("semua");
+  const [actFilterAction, setActFilterAction] = useState<"semua" | "create" | "update" | "delete" | "kirim">("semua");
 
   useEffect(() => {
     fetch("http://localhost:5000/api/activity")
@@ -294,12 +297,12 @@ export default function KelolaDataPage() {
 
           <div className="relative ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-            <input type="text" placeholder="Cari TNKB, trayek, petugas..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 transition w-64" />
+            <input type="text" placeholder="Cari TNKB, trayek, petugas..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 transition w-full sm:w-64" />
           </div>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
           <table className="w-full min-w-[1500px]">
             <thead>
               <tr className="border-b border-gray-200">
@@ -309,7 +312,14 @@ export default function KelolaDataPage() {
               </tr>
             </thead>
             <tbody>
-              {paginatedPergerakan.length === 0 ? (
+              {isLoadingPergerakan ? (
+                <tr><td colSpan={14} className="px-3 py-12 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+                    <span className="text-text-secondary text-sm">Memuat data pergerakan...</span>
+                  </div>
+                </td></tr>
+              ) : paginatedPergerakan.length === 0 ? (
                 <tr><td colSpan={14} className="px-3 py-10 text-center text-sm text-text-secondary">Tidak ada data.</td></tr>
               ) : (
                 paginatedPergerakan.map((k, idx) => (
@@ -355,7 +365,7 @@ export default function KelolaDataPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-5 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-4">
               <span className="text-sm text-text-secondary">Menampilkan {startIndex + 1}–{Math.min(endIndex, totalItems)} dari {totalItems} data</span>
               <div className="flex items-center gap-2">
@@ -400,15 +410,15 @@ export default function KelolaDataPage() {
 
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <div className="flex rounded-lg overflow-hidden border border-gray-200">
-            {(["semua", "create", "update", "delete"] as const).map((s, i) => (
-              <button key={s} onClick={() => setActFilterAction(s)} className={`px-3 py-1.5 text-xs font-medium transition-colors ${i > 0 ? "border-l border-gray-200" : ""} ${actFilterAction === s ? s === "create" ? "bg-green-500 text-white" : s === "update" ? "bg-blue-500 text-white" : s === "delete" ? "bg-red-500 text-white" : "bg-sidebar text-white" : "bg-gray-50 text-text-secondary hover:bg-gray-100"}`}>
-                {s === "semua" ? "Semua" : s === "create" ? "Input" : s === "update" ? "Edit" : "Hapus"}
+            {(["semua", "create", "update", "delete", "kirim"] as const).map((s, i) => (
+              <button key={s} onClick={() => setActFilterAction(s)} className={`px-3 py-1.5 text-xs font-medium transition-colors ${i > 0 ? "border-l border-gray-200" : ""} ${actFilterAction === s ? s === "create" ? "bg-green-500 text-white" : s === "update" ? "bg-blue-500 text-white" : s === "delete" ? "bg-red-500 text-white" : s === "kirim" ? "bg-purple-500 text-white" : "bg-sidebar text-white" : "bg-gray-50 text-text-secondary hover:bg-gray-100"}`}>
+                {s === "semua" ? "Semua" : s === "create" ? "Input" : s === "update" ? "Edit" : s === "delete" ? "Hapus" : "Kirim"}
               </button>
             ))}
           </div>
           <div className="relative ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-            <input type="text" placeholder="Cari user, deskripsi..." value={actSearchQuery} onChange={(e) => setActSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 transition w-56" />
+            <input type="text" placeholder="Cari user, deskripsi..." value={actSearchQuery} onChange={(e) => setActSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 transition w-full sm:w-56" />
           </div>
         </div>
 
@@ -435,8 +445,8 @@ export default function KelolaDataPage() {
                     </td>
                     <td className="px-3 py-3 text-sm font-medium text-text-primary whitespace-nowrap">{item.username}</td>
                     <td className="px-3 py-3 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${item.action === "create" ? "bg-green-100 text-green-700" : item.action === "update" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"}`}>
-                        {item.action === "create" ? <><Plus className="w-3 h-3" /> Input</> : item.action === "update" ? <><Pencil className="w-3 h-3" /> Edit</> : <><Trash2 className="w-3 h-3" /> Hapus</>}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${item.action === "create" ? "bg-green-100 text-green-700" : item.action === "update" ? "bg-blue-100 text-blue-700" : item.action === "kirim" ? "bg-purple-100 text-purple-700" : "bg-red-100 text-red-700"}`}>
+                        {item.action === "create" ? <><Plus className="w-3 h-3" /> Input</> : item.action === "update" ? <><Pencil className="w-3 h-3" /> Edit</> : item.action === "kirim" ? <><Send className="w-3 h-3" /> Kirim</> : <><Trash2 className="w-3 h-3" /> Hapus</>}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-sm text-text-primary">{item.description}</td>

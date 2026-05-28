@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import {
-  BarChart3, Users, Filter, ChevronDown, MapPin, ArrowUpDown, Calendar,
+  BarChart3, Users, Filter, ChevronDown, MapPin, ArrowUpDown, Calendar, Loader2,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -52,6 +52,7 @@ const barColors = ["#60a5fa","#4ade80","#fbbf24","#f87171","#a78bfa","#34d399"];
 
 export default function AnalisisPage() {
   const [allData, setAllData] = useState<DataRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterMode, setFilterMode] = useState<"bulanan" | "harian">("bulanan");
   const [bulan, setBulan] = useState("Januari");
   const [tahun, setTahun] = useState(new Date().getFullYear());
@@ -61,6 +62,7 @@ export default function AnalisisPage() {
 
   // Fetch data dari API
   useEffect(() => {
+    setIsLoading(true);
     fetch("http://localhost:5000/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
@@ -87,7 +89,8 @@ export default function AnalisisPage() {
         });
         setAllData(rows);
       })
-      .catch((err) => console.error("Gagal fetch:", err));
+      .catch((err) => console.error("Gagal fetch:", err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   // Filter berdasarkan periode
@@ -181,6 +184,13 @@ export default function AnalisisPage() {
         <BarChart3 className="w-8 h-8 text-white" />
         <h2 className="text-white font-bold text-xl tracking-wide">ANALISIS</h2>
       </div>
+
+      {isLoading && (
+        <div className="bg-white rounded-2xl p-8 shadow-md flex items-center justify-center gap-3">
+          <Loader2 className="w-6 h-6 text-sidebar animate-spin" />
+          <span className="text-text-secondary text-sm">Memuat data analisis...</span>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="bg-white rounded-2xl p-5 shadow-md flex items-center gap-4 flex-wrap">
@@ -408,7 +418,8 @@ export default function AnalisisPage() {
         <div className="px-6 py-4 border-b border-gray-100">
           <h3 className="font-bold text-text-primary text-sm">Detail Analisis Kendaraan <span className="ml-2 bg-sidebar/10 text-sidebar text-xs font-semibold px-2 py-0.5 rounded-full">{filteredData.length} data</span></h3>
         </div>
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[1000px]">
             <thead>
               <tr className="border-b border-gray-200">
@@ -440,6 +451,49 @@ export default function AnalisisPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-3 px-4 pb-4">
+          {paginatedData.length === 0 ? (
+            <div className="py-10 text-center text-sm text-text-secondary">Tidak ada data analisis.</div>
+          ) : (
+            paginatedData.map((row, idx) => (
+              <div key={row.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-secondary font-semibold">#{idx + 1}</span>
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${row.status === "Kedatangan" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>{row.status}</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-baseline gap-2">
+                    <p className="font-bold text-text-primary text-base">{row.tnkb}</p>
+                    <span className="text-xs text-text-secondary">{row.jenis}</span>
+                  </div>
+                  <p className="text-xs text-text-secondary">{row.timestamp}</p>
+                  <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Asal</p>
+                      <p className="text-sm text-text-primary">{row.trayekAsal || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Tujuan</p>
+                      <p className="text-sm text-text-primary">{row.trayekTujuan || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Penumpang</p>
+                      <p className="text-sm text-text-primary">{row.penumpang || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Perusahaan</p>
+                      <p className="text-sm text-text-primary">{row.perusahaan || "-"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Pagination Controls */}

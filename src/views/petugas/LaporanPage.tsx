@@ -88,7 +88,7 @@ function DetailModal({ item, onClose }: { item: LaporanItem; onClose: () => void
 
         <button
           onClick={onClose}
-          className="mt-6 w-full bg-gray-100 hover:bg-gray-200 text-text-secondary font-semibold py-3 rounded-xl transition-colors"
+          className="mt-6 w-full bg-sidebar hover:bg-sidebar-hover text-white font-semibold py-3 rounded-xl transition-colors"
         >
           Tutup
         </button>
@@ -106,6 +106,7 @@ export default function LaporanPage() {
   const [selectedTahun, setSelectedTahun] = useState(new Date().getFullYear());
   const [catatan, setCatatan] = useState("");
   const [riwayat, setRiwayat] = useState<LaporanItem[]>([]);
+  const [petugasNama, setPetugasNama] = useState<string>("Petugas");
   const [detailItem, setDetailItem] = useState<LaporanItem|null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showKonfirmasi, setShowKonfirmasi] = useState(false);
@@ -113,6 +114,20 @@ export default function LaporanPage() {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
   const [selectedTanggal, setSelectedTanggal] = useState(todayStr);
+
+  // Fetch nama petugas dari users API
+  useEffect(() => {
+    const username = typeof window !== "undefined" ? sessionStorage.getItem("app_username") : null;
+    if (!username) return;
+    fetch("http://localhost:5000/api/users")
+      .then((res) => res.json())
+      .then((json) => {
+        const user = (json.data || []).find((u: any) => u.username === username);
+        if (user && user.nama) setPetugasNama(user.nama);
+        else setPetugasNama(username);
+      })
+      .catch(() => setPetugasNama(username));
+  }, []);
 
   // Fetch data kendaraan dari API
   useEffect(() => {
@@ -182,6 +197,19 @@ export default function LaporanPage() {
     return (selectedBulan === "Semua" || date.getMonth() === bulanIndex[selectedBulan]) && date.getFullYear() === selectedTahun;
   });
 
+  // Pagination preview data
+  const [previewPage, setPreviewPage] = useState(1);
+  const [previewRowsPerPage, setPreviewRowsPerPage] = useState(10);
+  const previewTotalPages = Math.ceil(previewData.length / previewRowsPerPage);
+  const previewStartIdx = (previewPage - 1) * previewRowsPerPage;
+  const previewEndIdx = previewStartIdx + previewRowsPerPage;
+  const paginatedPreview = previewData.slice(previewStartIdx, previewEndIdx);
+
+  // Reset page saat filter berubah
+  useEffect(() => {
+    setPreviewPage(1);
+  }, [filterMode, selectedBulan, selectedTahun, selectedTanggal]);
+
   const totalDatang    = previewData.filter(k=>k.status==="Kedatangan").length;
   const totalBerangkat = previewData.filter(k=>k.status==="Keberangkatan").length;
   const totalPenumpang = previewData.reduce((s,k)=>s+k.penumpangDatang+k.penumpangBerangkat,0);
@@ -195,13 +223,14 @@ export default function LaporanPage() {
     const pad = (n:number) => String(n).padStart(2,"0");
     const tanggalKirim = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
+    // Ambil nama petugas dari session
     // Kirim ke backend
     try {
       await fetch("http://localhost:5000/api/laporan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          petugas_nama: "Petugas",
+          petugas_nama: petugasNama,
           periode: periodeLabel,
           catatan: catatan.trim() || "-",
           total_kendaraan: previewData.length,
@@ -377,7 +406,7 @@ export default function LaporanPage() {
           </div>
 
           {/* Ringkasan data */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label:"Total Kendaraan", value:previewData.length, color:"bg-sidebar/10 text-sidebar"   },
               { label:"Kedatangan",      value:totalDatang,         color:"bg-blue-50 text-blue-600"     },
@@ -386,7 +415,7 @@ export default function LaporanPage() {
             ].map((s) => (
               <div key={s.label} className={`rounded-xl p-4 text-center ${s.color}`}>
                 <p className="text-2xl font-bold">{s.value}</p>
-                <p className="text-xs font-medium mt-0.5 opacity-80">{s.label}</p>
+                <p className="text-xs font-medium mt-1 opacity-80 leading-tight break-words">{s.label}</p>
               </div>
             ))}
           </div>
@@ -399,7 +428,8 @@ export default function LaporanPage() {
                 {previewData.length} data
               </span>
             </p>
-            <div className="overflow-x-auto rounded-xl border border-gray-100">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100">
               <table className="w-full min-w-[900px] text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
@@ -412,9 +442,9 @@ export default function LaporanPage() {
                   {previewData.length === 0 ? (
                     <tr><td colSpan={10} className="px-3 py-8 text-center text-text-secondary">Tidak ada data untuk periode ini.</td></tr>
                   ) : (
-                    previewData.map((k,idx) => (
+                    paginatedPreview.map((k,idx) => (
                       <tr key={k.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                        <td className="px-3 py-3 text-text-secondary whitespace-nowrap">{idx+1}</td>
+                        <td className="px-3 py-3 text-text-secondary whitespace-nowrap">{previewStartIdx + idx + 1}</td>
                         <td className="px-3 py-3 text-text-secondary whitespace-nowrap">{k.timestamp}</td>
                         <td className="px-3 py-3 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -434,6 +464,115 @@ export default function LaporanPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {previewData.length === 0 ? (
+                <div className="py-8 text-center text-sm text-text-secondary border border-gray-100 rounded-xl">Tidak ada data untuk periode ini.</div>
+              ) : (
+                paginatedPreview.map((k, idx) => (
+                  <div key={k.id} className="border border-gray-200 rounded-xl p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-text-secondary font-semibold">#{previewStartIdx + idx + 1}</span>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${k.status === "Kedatangan" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>{k.status}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-baseline gap-2">
+                        <p className="font-bold text-text-primary text-base">{k.tnkb}</p>
+                        <span className="text-xs text-text-secondary">{k.jenis}</span>
+                      </div>
+                      <p className="text-xs text-text-secondary">{k.timestamp}</p>
+                      <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
+                        <div>
+                          <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Asal</p>
+                          <p className="text-sm text-text-primary">{k.trayekAsal || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Tujuan</p>
+                          <p className="text-sm text-text-primary">{k.trayekTujuan || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-text-secondary uppercase tracking-wide">Penumpang</p>
+                          <p className="text-sm text-text-primary">{(k.penumpangDatang || k.penumpangBerangkat) || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-text-secondary uppercase tracking-wide">Perusahaan</p>
+                          <p className="text-sm text-text-primary">{k.perusahaan || "-"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Pagination Preview */}
+            {previewTotalPages > 1 && (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs text-text-secondary">
+                    Menampilkan {previewStartIdx + 1}–{Math.min(previewEndIdx, previewData.length)} dari {previewData.length} data
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-text-secondary">Per halaman:</label>
+                    <select
+                      value={previewRowsPerPage}
+                      onChange={(e) => { setPreviewRowsPerPage(Number(e.target.value)); setPreviewPage(1); }}
+                      className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30"
+                    >
+                      {[5, 10, 20, 50].map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPreviewPage(1)}
+                    disabled={previewPage === 1}
+                    className="px-2.5 py-1 text-xs rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
+                  >«</button>
+                  <button
+                    onClick={() => setPreviewPage((p) => Math.max(1, p - 1))}
+                    disabled={previewPage === 1}
+                    className="px-2.5 py-1 text-xs rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
+                  >‹</button>
+                  {(() => {
+                    const pages: (number | string)[] = [];
+                    const maxVisible = 5;
+                    let start = Math.max(1, previewPage - Math.floor(maxVisible / 2));
+                    let end = Math.min(previewTotalPages, start + maxVisible - 1);
+                    if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
+                    if (start > 1) { pages.push(1); if (start > 2) pages.push("..."); }
+                    for (let i = start; i <= end; i++) pages.push(i);
+                    if (end < previewTotalPages) { if (end < previewTotalPages - 1) pages.push("..."); pages.push(previewTotalPages); }
+                    return pages.map((p, i) =>
+                      typeof p === "string" ? (
+                        <span key={`ellipsis-${i}`} className="px-1.5 py-1 text-xs text-text-secondary">…</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setPreviewPage(p)}
+                          className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${previewPage === p ? "bg-sidebar text-white font-semibold" : "hover:bg-gray-100 text-text-secondary"}`}
+                        >{p}</button>
+                      )
+                    );
+                  })()}
+                  <button
+                    onClick={() => setPreviewPage((p) => Math.min(previewTotalPages, p + 1))}
+                    disabled={previewPage === previewTotalPages}
+                    className="px-2.5 py-1 text-xs rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
+                  >›</button>
+                  <button
+                    onClick={() => setPreviewPage(previewTotalPages)}
+                    disabled={previewPage === previewTotalPages}
+                    className="px-2.5 py-1 text-xs rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
+                  >»</button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Catatan */}
@@ -477,22 +616,24 @@ export default function LaporanPage() {
           ) : (
             <div className="space-y-3">
               {riwayat.map((item) => (
-                <div key={item.id} className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    item.status==="dibaca" ? "bg-green-100" : "bg-amber-100"
-                  }`}>
-                    {item.status==="dibaca"
-                      ? <Eye className="w-5 h-5 text-green-600" />
-                      : <Clock className="w-5 h-5 text-amber-600" />
-                    }
+                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3 sm:contents">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      item.status==="dibaca" ? "bg-green-100" : "bg-amber-100"
+                    }`}>
+                      {item.status==="dibaca"
+                        ? <Eye className="w-5 h-5 text-green-600" />
+                        : <Clock className="w-5 h-5 text-amber-600" />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-text-primary text-sm">{item.periode}</p>
+                      <p className="text-xs text-text-secondary mt-0.5 truncate">{item.catatan}</p>
+                      <p className="text-xs text-text-secondary mt-0.5">Dikirim: {item.tanggal}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-text-primary text-sm">{item.periode}</p>
-                    <p className="text-xs text-text-secondary mt-0.5 truncate">{item.catatan}</p>
-                    <p className="text-xs text-text-secondary mt-0.5">Dikirim: {item.tanggal}</p>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="text-right text-xs text-text-secondary">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0 pl-13 sm:pl-0">
+                    <div className="text-left sm:text-right text-xs text-text-secondary">
                       <p>{item.totalKendaraan} kendaraan</p>
                       <p>{item.totalPenumpang} penumpang</p>
                     </div>

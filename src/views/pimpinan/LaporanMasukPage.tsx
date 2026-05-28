@@ -55,7 +55,7 @@ function DetailModal({ item, onClose, onMarkRead }: { item: LaporanMasuk; onClos
             <p className="text-text-primary bg-gray-50 rounded-xl p-3 leading-relaxed">{item.catatan}</p>
           </div>
         </div>
-        <div className="flex gap-3 mt-6">
+        <div className="flex flex-col sm:flex-row gap-3 mt-6">
           {item.status === "belum-dibaca" && (
             <button onClick={() => { onMarkRead(item.id); onClose(); }} className="flex-1 flex items-center justify-center gap-2 bg-sidebar hover:bg-sidebar-hover text-white font-bold py-3 rounded-xl transition-colors">
               <CheckCheck className="w-4 h-4" /> Tandai Sudah Dibaca
@@ -151,7 +151,7 @@ export default function LaporanMasukPage() {
 
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-sidebar rounded-2xl px-8 py-5 flex items-center justify-between shadow-lg">
+        <div className="bg-sidebar rounded-2xl px-6 sm:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-lg">
           <div className="flex items-center gap-4">
             <div className="relative">
               <Inbox className="w-8 h-8 text-white" />
@@ -165,35 +165,35 @@ export default function LaporanMasukPage() {
             </div>
           </div>
           {belumDibacaCount > 0 && (
-            <button onClick={handleMarkAllRead} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+            <button onClick={handleMarkAllRead} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors w-full sm:w-auto">
               <CheckCheck className="w-4 h-4" /> Tandai Semua Dibaca
             </button>
           )}
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl p-5 shadow-md flex items-center gap-4">
-            <div className="w-12 h-12 bg-sidebar/10 rounded-xl flex items-center justify-center"><FileText className="w-6 h-6 text-sidebar" /></div>
-            <div><p className="text-xs text-text-secondary font-semibold uppercase">Total Laporan</p><p className="text-2xl font-bold text-text-primary">{laporan.length}</p></div>
+            <div className="w-12 h-12 bg-sidebar/10 rounded-xl flex items-center justify-center flex-shrink-0"><FileText className="w-6 h-6 text-sidebar" /></div>
+            <div className="min-w-0"><p className="text-xs text-text-secondary font-semibold uppercase">Total Laporan</p><p className="text-2xl font-bold text-text-primary">{laporan.length}</p></div>
           </div>
           <div className="bg-white rounded-2xl p-5 shadow-md flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center"><Clock className="w-6 h-6 text-blue-500" /></div>
-            <div><p className="text-xs text-blue-500 font-semibold uppercase">Belum Dibaca</p><p className="text-2xl font-bold text-blue-600">{belumDibacaCount}</p></div>
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0"><Clock className="w-6 h-6 text-blue-500" /></div>
+            <div className="min-w-0"><p className="text-xs text-blue-500 font-semibold uppercase">Belum Dibaca</p><p className="text-2xl font-bold text-blue-600">{belumDibacaCount}</p></div>
           </div>
           <div className="bg-white rounded-2xl p-5 shadow-md flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center"><CheckCheck className="w-6 h-6 text-green-500" /></div>
-            <div><p className="text-xs text-green-500 font-semibold uppercase">Sudah Dibaca</p><p className="text-2xl font-bold text-green-600">{laporan.filter(l=>l.status==="dibaca").length}</p></div>
+            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0"><CheckCheck className="w-6 h-6 text-green-500" /></div>
+            <div className="min-w-0"><p className="text-xs text-green-500 font-semibold uppercase">Sudah Dibaca</p><p className="text-2xl font-bold text-green-600">{laporan.filter(l=>l.status==="dibaca").length}</p></div>
           </div>
         </div>
 
         {/* Table Section */}
-        <div className="bg-white rounded-2xl p-6 shadow-md">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md">
           {/* Filter & Search */}
           <div className="flex flex-wrap items-center gap-3 mb-5">
-            <div className="flex rounded-lg overflow-hidden border border-gray-200">
+            <div className="flex rounded-lg overflow-hidden border border-gray-200 w-full sm:w-auto">
               {(["semua", "belum-dibaca", "dibaca"] as const).map((s, i) => (
-                <button key={s} onClick={() => setFilterStatus(s)} className={`px-4 py-2 text-xs font-medium transition-colors ${i > 0 ? "border-l border-gray-200" : ""} ${filterStatus === s ? s === "belum-dibaca" ? "bg-blue-500 text-white" : s === "dibaca" ? "bg-green-500 text-white" : "bg-sidebar text-white" : "bg-gray-50 text-text-secondary hover:bg-gray-100"}`}>
+                <button key={s} onClick={() => setFilterStatus(s)} className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-medium transition-colors ${i > 0 ? "border-l border-gray-200" : ""} ${filterStatus === s ? s === "belum-dibaca" ? "bg-blue-500 text-white" : s === "dibaca" ? "bg-green-500 text-white" : "bg-sidebar text-white" : "bg-gray-50 text-text-secondary hover:bg-gray-100"}`}>
                   {s === "semua" ? "Semua" : s === "belum-dibaca" ? "Belum Dibaca" : "Sudah Dibaca"}
                 </button>
               ))}
@@ -201,14 +201,14 @@ export default function LaporanMasukPage() {
 
             <span className="text-xs text-text-secondary">{displayData.length} laporan</span>
 
-            <div className="relative ml-auto">
+            <div className="relative ml-0 sm:ml-auto w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-              <input type="text" placeholder="Cari petugas, periode, catatan..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-64" />
+              <input type="text" placeholder="Cari petugas, periode, catatan..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-full sm:w-64" />
             </div>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="border-b border-gray-200">
@@ -253,10 +253,67 @@ export default function LaporanMasukPage() {
             </table>
           </div>
 
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {paginatedData.length === 0 ? (
+              <div className="py-10 text-center text-sm text-text-secondary">Tidak ada laporan.</div>
+            ) : (
+              paginatedData.map((item, idx) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleOpenDetail(item)}
+                  className={`border border-gray-200 rounded-xl p-4 cursor-pointer hover:bg-gray-50 transition-colors ${item.status === "belum-dibaca" ? "bg-blue-50/30 border-blue-200" : ""}`}
+                >
+                  <div className="flex items-start justify-between mb-2 gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-text-secondary font-semibold">#{startIndex + idx + 1}</span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${item.status === "belum-dibaca" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
+                        {item.status === "belum-dibaca" ? "Baru" : "Dibaca"}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); window.open(`http://localhost:5000/api/laporan/${item.id}/export`, '_blank'); }}
+                      className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors flex-shrink-0"
+                      title="Download Excel"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="font-bold text-text-primary text-base flex items-center gap-2">
+                      {item.petugas}
+                      {item.status === "belum-dibaca" && <span className="w-2 h-2 rounded-full bg-blue-500" />}
+                    </p>
+                    <p className="text-xs text-text-secondary">{item.tanggal}</p>
+                    <p className="text-xs text-text-secondary">Periode: <span className="font-medium text-text-primary">{item.periode}</span></p>
+                    <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Kendaraan</p>
+                        <p className="text-sm font-semibold text-text-primary">{item.totalKendaraan}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Penumpang</p>
+                        <p className="text-sm font-semibold text-amber-600">{item.totalPenumpang}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Kedatangan</p>
+                        <p className="text-sm text-blue-600">{item.totalDatang}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Keberangkatan</p>
+                        <p className="text-sm text-green-600">{item.totalBerangkat}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-5 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-sm text-text-secondary">Menampilkan {startIndex + 1}–{Math.min(endIndex, totalItems)} dari {totalItems} laporan</span>
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-text-secondary">Per halaman:</label>

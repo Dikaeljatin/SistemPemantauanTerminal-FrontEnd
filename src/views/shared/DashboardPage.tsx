@@ -159,7 +159,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Total Kendaraan */}
-      <div className="bg-sidebar rounded-2xl px-8 py-5 flex items-center gap-4 shadow-lg">
+      <div className="bg-sidebar rounded-2xl px-6 sm:px-8 py-5 flex items-center gap-4 shadow-lg">
         <div className="flex flex-col">
           <h2 className="text-white font-bold text-lg tracking-wide">TOTAL KENDARAAN</h2>
           <div className="flex items-center gap-3 mt-1">
@@ -217,7 +217,8 @@ export default function DashboardPage() {
 
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[1000px]">
             <thead>
               <tr className="border-b border-gray-200">
@@ -251,10 +252,53 @@ export default function DashboardPage() {
           </table>
         </div>
 
+        {/* Mobile Card View */}
+        <div className="md:hidden p-4 space-y-3">
+          {paginatedData.length === 0 ? (
+            <div className="py-10 text-center text-sm text-text-secondary">Tidak ada data yang sesuai filter.</div>
+          ) : (
+            paginatedData.map((k, idx) => (
+              <div key={k.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-secondary font-semibold">#{startIndex + idx + 1}</span>
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${k.status === "Kedatangan" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>{k.status}</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-baseline gap-2">
+                    <p className="font-bold text-text-primary text-base">{k.tnkb}</p>
+                    <span className="text-xs text-text-secondary">{k.jenis}</span>
+                  </div>
+                  <p className="text-xs text-text-secondary">{k.timestamp}</p>
+                  <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Asal</p>
+                      <p className="text-sm text-text-primary">{k.trayekAsal || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Tujuan</p>
+                      <p className="text-sm text-text-primary">{k.trayekTujuan || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Penumpang</p>
+                      <p className="text-sm text-text-primary">{k.penumpangDatang || k.penumpangBerangkat || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Perusahaan</p>
+                      <p className="text-sm text-text-primary">{k.perusahaan || "-"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="px-6 pb-5 pt-4 flex items-center justify-between border-t border-gray-100">
-            <div className="flex items-center gap-4">
+          <div className="px-4 sm:px-6 pb-5 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-100">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-text-secondary">
                 Menampilkan {startIndex + 1}–{Math.min(endIndex, totalItems)} dari {totalItems} data
               </span>
