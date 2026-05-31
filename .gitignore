@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 .vite-source-tags.js
 .vercel
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.*.local
