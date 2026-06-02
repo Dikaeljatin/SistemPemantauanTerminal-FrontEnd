@@ -1,73 +1,79 @@
-# React + TypeScript + Vite
+# MonitoringSystem — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend Next.js 14 untuk sistem monitoring pergerakan kendaraan terminal.
 
-Currently, two official plugins are available:
+📖 **Dokumentasi lengkap project**: lihat [`../README.md`](../README.md)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🚀 Quick Start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+cp .env.local.example .env.local
+# Edit .env.local dengan kredensial Anda
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Buka [http://localhost:3000](http://localhost:3000).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 📜 Available Scripts
+
+```bash
+npm run dev      # development server
+npm run build    # production build
+npm start        # production server
+npm run lint     # run ESLint
 ```
+
+---
+
+## 🛠️ Tech Stack
+
+- **Next.js 14** (App Router)
+- **TypeScript**
+- **TailwindCSS 4**
+- **Recharts** (data visualization)
+- **Lucide React** (icons)
+
+---
+
+## 📂 Folder Structure
+
+```
+src/
+├── app/                  # Next.js App Router pages
+│   ├── (auth)/           # Public routes
+│   ├── (dashboard)/      # Protected routes
+│   └── api/              # API routes
+├── components/           # Reusable UI components
+├── views/                # Page views per role
+└── lib/                  # Utilities
+```
+
+---
+
+## 🌐 Environment Variables
+
+Lihat [`.env.local.example`](./.env.local.example) untuk daftar lengkap.
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+CRON_SECRET=your-cron-secret
+```
+
+---
+
+## 🚀 Deploy
+
+### Vercel
+1. Import repo
+2. Root directory: `FE`
+3. Set environment variables
+4. Deploy
+
+Build output: 15+ static & dynamic routes.

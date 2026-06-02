@@ -46,10 +46,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/super-admin/kelola-data/page.js"
     ],
+    "/(dashboard)/super-admin/konfigurasi/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/super-admin/konfigurasi/page.js"
+    ],
     "/(dashboard)/super-admin/kelola-user/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/super-admin/kelola-user/page.js"
+    ],
+    "/(dashboard)/petugas/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/petugas/dashboard/page.js"
+    ],
+    "/(dashboard)/petugas/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/petugas/layout.js"
+    ],
+    "/(dashboard)/petugas/isi-data/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/petugas/isi-data/page.js"
     ]
   }
 }
