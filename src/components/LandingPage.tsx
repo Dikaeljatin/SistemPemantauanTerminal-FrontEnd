@@ -26,8 +26,9 @@ export default function LandingPage({ onGoToLogin }: LandingPageProps) {
   const [activeTab, setActiveTab] = useState<"kedatangan" | "keberangkatan">("kedatangan");
 
   useEffect(() => {
+    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
     const fetchData = () => {
-      fetch("http://localhost:5000/api/pergerakan")
+      fetch(`${BASE_URL}/api/pergerakan`)
         .then((res) => res.json())
         .then((json) => {
           const rows: DataRow[] = (json.data || []).map((item: any, idx: number) => {

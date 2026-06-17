@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiFetch } from "../../lib/api";
 import { ClipboardList, ArrowLeft, ArrowRight, CheckCircle, ChevronDown } from "lucide-react";
 
 // ─── options ──────────────────────────────────────────────────────────────────
@@ -136,6 +137,42 @@ function FormView({
   const [errors, setErrors] = useState<Partial<VehicleForm>>({});
   const [submitted, setSubmitted] = useState(false);
   const [showVerifikasi, setShowVerifikasi] = useState(false);
+  const [showTnkbDrop, setShowTnkbDrop] = useState(false);
+  const [vehicleMap, setVehicleMap] = useState<Record<string, Array<{
+    tnkb: string; perusahaan: string; trayekAsal: string; trayekTujuan: string;
+  }>>>({});
+
+  // Fetch riwayat kendaraan untuk dropdown TNKB
+  useEffect(() => {
+    apiFetch("/api/pergerakan")
+      .then((r) => r.json())
+      .then((json) => {
+        const rows: any[] = json.data || json || [];
+        // Gunakan lowercase sebagai key agar case-insensitive (DB bisa simpan "HIACE" atau "Hiace")
+        const map: Record<string, Record<string, { perusahaan: string; trayekAsal: string; trayekTujuan: string }>> = {};
+        rows.forEach((item: any) => {
+          const jenis = (item.jenis_kendaraan || "").trim().toLowerCase();
+          const tnkb = (item.tnkb || "").trim();
+          if (!jenis || !tnkb) return;
+          if (!map[jenis]) map[jenis] = {};
+          if (!map[jenis][tnkb]) {
+            map[jenis][tnkb] = {
+              perusahaan: item.nama_perusahaan || "",
+              trayekAsal: item.trayek_asal || "",
+              trayekTujuan: item.trayek_tujuan || "",
+            };
+          }
+        });
+        const result: Record<string, Array<{ tnkb: string; perusahaan: string; trayekAsal: string; trayekTujuan: string }>> = {};
+        Object.entries(map).forEach(([jenis, tnkbMap]) => {
+          result[jenis] = Object.entries(tnkbMap)
+            .map(([tnkb, info]) => ({ tnkb, ...info }))
+            .sort((a, b) => a.tnkb.localeCompare(b.tnkb));
+        });
+        setVehicleMap(result);
+      })
+      .catch((err) => console.error("[TNKB] fetch error:", err));
+  }, []);
 
   const set = (k: keyof VehicleForm, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -190,9 +227,8 @@ function FormView({
         created_by: userName || (typeof window !== "undefined" ? sessionStorage.getItem("app_username") : null) || null,
       };
 
-      const res = await fetch("http://localhost:5000/api/pergerakan", {
+      const res = await apiFetch("/api/pergerakan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -410,16 +446,24 @@ function FormView({
             />
           </Field>
 
-          {/* TNKB */}
-          <Field label="TNKB" error={errors.tnkb}>
-            <input
-              type="text"
-              value={form.tnkb}
-              onChange={(e) => set("tnkb", e.target.value.toUpperCase())}
-              placeholder="Contoh: BL 1234 AB"
-              className={inputCls(!!errors.tnkb)}
-            />
-          </Field>
+          {/* Jenis Kendaraan */}
+          <SelectField
+            label="Jenis Kendaraan"
+            error={errors.jenis}
+            value={form.jenis}
+            onChange={(val) => {
+              set("jenis", val);
+              set("tnkb", "");
+              set("perusahaan", "");
+              if (val && kapasitasMap[val]) {
+                set("kapasitas", kapasitasMap[val]);
+              } else {
+                set("kapasitas", "");
+              }
+            }}
+            options={jenisOptions}
+            placeholder="Pilih jenis kendaraan"
+          />
 
           {/* Trayek Asal */}
           <Field label="Trayek Asal" error={errors.trayekAsal}>
@@ -432,22 +476,57 @@ function FormView({
             />
           </Field>
 
-          {/* Jenis Kendaraan */}
-          <SelectField
-            label="Jenis Kendaraan"
-            error={errors.jenis}
-            value={form.jenis}
-            onChange={(val) => {
-              set("jenis", val);
-              if (val && kapasitasMap[val]) {
-                set("kapasitas", kapasitasMap[val]);
-              } else {
-                set("kapasitas", "");
-              }
-            }}
-            options={jenisOptions}
-            placeholder="Pilih jenis kendaraan"
-          />
+          {/* TNKB — combobox berdasarkan jenis kendaraan */}
+          <Field label="TNKB" error={errors.tnkb}>
+            <div className="relative">
+              <input
+                type="text"
+                value={form.tnkb}
+                onChange={(e) => { set("tnkb", e.target.value.toUpperCase()); setShowTnkbDrop(true); }}
+                onFocus={() => setShowTnkbDrop(true)}
+                onBlur={() => setTimeout(() => setShowTnkbDrop(false), 150)}
+                placeholder={form.jenis ? "Ketik atau pilih TNKB..." : "Pilih jenis kendaraan dulu"}
+                disabled={!form.jenis}
+                className={`${inputCls(!!errors.tnkb)} ${!form.jenis ? "bg-gray-50 cursor-not-allowed" : ""}`}
+              />
+              {showTnkbDrop && form.jenis && (() => {
+                const allOptions = vehicleMap[form.jenis.toLowerCase()] || [];
+                const filtered = allOptions.filter((v) =>
+                  v.tnkb.toUpperCase().includes(form.tnkb.toUpperCase())
+                );
+                if (filtered.length === 0) return null;
+                return (
+                  <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-30 max-h-52 overflow-y-auto">
+                    {filtered.map((v) => (
+                      <button
+                        key={v.tnkb}
+                        type="button"
+                        onMouseDown={() => {
+                          set("tnkb", v.tnkb);
+                          if (v.perusahaan) set("perusahaan", v.perusahaan);
+                          if (v.trayekAsal) set("trayekAsal", v.trayekAsal);
+                          if (v.trayekTujuan) set("trayekTujuan", v.trayekTujuan);
+                          setShowTnkbDrop(false);
+                        }}
+                        className={`w-full text-left px-5 py-2.5 text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${
+                          form.tnkb === v.tnkb
+                            ? "bg-sidebar text-white font-medium"
+                            : "text-text-primary hover:bg-gray-50"
+                        }`}
+                      >
+                        <span className="font-semibold">{v.tnkb}</span>
+                        {v.perusahaan && (
+                          <span className={`ml-2 text-xs ${form.tnkb === v.tnkb ? "text-white/70" : "text-text-secondary"}`}>
+                            {v.perusahaan}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </Field>
 
           {/* Trayek Tujuan */}
           <Field label="Trayek Tujuan" error={errors.trayekTujuan}>
@@ -506,7 +585,7 @@ export default function IsiDataKendaraanPage({ userName }: { userName?: string }
 
   // Fetch jenis kendaraan dari API
   useEffect(() => {
-    fetch("http://localhost:5000/api/jenis-kendaraan")
+    apiFetch("/api/jenis-kendaraan")
       .then((res) => res.json())
       .then((json) => {
         const items = json.data || [];

@@ -52,7 +52,8 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
 
     // Login via API
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: username.trim(), password: password.trim() }),
@@ -74,6 +75,11 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
         setIsLoading(false);
         return;
       }
+
+      // Simpan JWT token untuk request selanjutnya
+      sessionStorage.setItem("app_token", data.token);
+      sessionStorage.setItem("app_user_id", String(data.user.id));
+      sessionStorage.setItem("app_nama", data.user.nama);
 
       setIsLoading(false);
       onLogin(actualRole, data.user.username || data.user.nama || username.trim());

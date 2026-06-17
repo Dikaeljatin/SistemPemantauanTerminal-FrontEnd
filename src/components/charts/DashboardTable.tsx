@@ -2,6 +2,7 @@
 
 import { ArrowUpDown, CalendarDays, Calendar, Filter, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
+import { apiFetch } from "../../lib/api";
 
 const bulanList = [
   "Januari","Februari","Maret","April","Mei","Juni",
@@ -55,7 +56,7 @@ export default function DashboardTable() {
   const [rowsPerPage, setRowsPerPage] = useState(20);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/pergerakan")
+    apiFetch("/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
         const rows: KendaraanRow[] = (json.data || []).map((item: any, idx: number) => {

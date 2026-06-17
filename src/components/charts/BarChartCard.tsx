@@ -5,12 +5,13 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
 } from "recharts";
+import { apiFetch } from "../../lib/api";
 
 export default function BarChartCard() {
   const [data, setData] = useState<{ name: string; value: number; fill: string }[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/pergerakan")
+    apiFetch("/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
         const counts: Record<string, number> = {};

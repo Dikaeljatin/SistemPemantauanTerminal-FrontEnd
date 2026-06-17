@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { LayoutDashboard, ClipboardList, Table2, FileText, BarChart3, Brain, LogOut, Globe, CarFront, UserCircle, Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
 import LogoutConfirmModal from "../../../components/layout/LogoutConfirmModal";
 import EditProfileModal from "../../../components/shared/EditProfileModal";
+import { apiFetch } from "../../../lib/api";
 
 const menuItems = [
   { id: "dashboard",       label: "DASHBOARD",          icon: LayoutDashboard, href: "/petugas/dashboard" },
@@ -23,15 +24,16 @@ export default function PetugasLayout({ children }: { children: React.ReactNode 
   const [collapsed, setCollapsed] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [userInfo, setUserInfo] = useState<{ id: number; nama: string; email: string; username: string } | null>(null);
+  const [username, setUsername] = useState("");
 
-  // Load user info from session + API
   useEffect(() => {
-    const username = typeof window !== "undefined" ? sessionStorage.getItem("app_username") : null;
-    if (username) {
-      fetch("http://localhost:5000/api/users")
+    const u = typeof window !== "undefined" ? sessionStorage.getItem("app_username") : null;
+    if (u) {
+      setUsername(u);
+      apiFetch("/api/users")
         .then((res) => res.json())
         .then((json) => {
-          const user = (json.data || []).find((u: any) => u.username === username);
+          const user = (json.data || []).find((usr: any) => usr.username === u);
           if (user) setUserInfo({ id: user.user_id, nama: user.nama, email: user.email || "", username: user.username });
         })
         .catch(() => {});
@@ -91,9 +93,9 @@ export default function PetugasLayout({ children }: { children: React.ReactNode 
       <div className={`flex-1 ${collapsed ? "ml-0 md:ml-20" : "ml-0 md:ml-64"} flex flex-col transition-all duration-300`}>
         <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-bg">
           <button onClick={() => setSidebarOpen(true)} className="md:hidden w-10 h-10 bg-sidebar text-white rounded-lg flex items-center justify-center shadow-lg"><Menu className="w-5 h-5" /></button>
-          <div className="flex items-center gap-3 ml-auto cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setShowProfile(true)}>
+          <div className="flex items-center gap-3 ml-auto">
             <div className="text-right">
-              <p className="font-bold text-text-primary text-sm tracking-wide">{userInfo?.nama || "PETUGAS"}</p>
+              <p className="font-bold text-text-primary text-sm tracking-wide uppercase">{username || "PETUGAS"}</p>
               <p className="text-xs text-text-secondary">Petugas</p>
             </div>
             <div className="w-10 h-10 rounded-full border-2 border-text-primary flex items-center justify-center"><UserCircle className="w-7 h-7 text-text-primary" /></div>

@@ -2,6 +2,7 @@
 
 import { CarFront, TrendingUp, TrendingDown, Users, CalendarDays, Calendar, Filter, ChevronDown, Search, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { apiFetch } from "../../lib/api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, PieChart, Pie, Legend,
@@ -68,7 +69,7 @@ export default function PimpinanDashboardPage() {
   // Fetch data dari API
   useEffect(() => {
     setIsLoading(true);
-    fetch("http://localhost:5000/api/pergerakan")
+    apiFetch("/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
         const rows: LaporanRow[] = (json.data || []).map((item: any, idx: number) => {
@@ -207,10 +208,14 @@ export default function PimpinanDashboardPage() {
         </div>
       </div>
 
+      {/* Konten utama dengan overlay loading */}
+      <div className="relative space-y-6">
       {isLoading && (
-        <div className="bg-white rounded-2xl p-8 shadow-md flex items-center justify-center gap-3">
-          <Loader2 className="w-6 h-6 text-sidebar animate-spin" />
-          <span className="text-text-secondary text-sm">Memuat data dashboard...</span>
+        <div className="absolute inset-0 bg-white/80 z-20 flex items-center justify-center rounded-2xl min-h-64">
+          <div className="flex flex-col items-center gap-3 bg-white px-8 py-6 rounded-2xl shadow-lg border border-gray-100">
+            <Loader2 className="w-8 h-8 text-sidebar animate-spin" />
+            <span className="text-sm font-medium text-text-secondary">Memuat data dashboard...</span>
+          </div>
         </div>
       )}
 
@@ -674,6 +679,7 @@ export default function PimpinanDashboardPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

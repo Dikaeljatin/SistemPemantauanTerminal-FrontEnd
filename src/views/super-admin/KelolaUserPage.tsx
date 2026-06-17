@@ -1,7 +1,8 @@
 "use client";
 
-import { Users, Plus, Search, Shield, User, Pencil, Trash2, X, Check } from "lucide-react";
+import { Users, Plus, Search, Shield, User, Pencil, Trash2, X, Check, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { apiFetch } from "../../lib/api";
 
 type Role = "Super Admin" | "Petugas" | "Pimpinan";
 type Status = "Aktif" | "Nonaktif";
@@ -204,10 +205,11 @@ export default function KelolaUserPage() {
   const [editUser, setEditUser]     = useState<UserData | null>(null);
   const [deleteUser, setDeleteUser] = useState<UserData | null>(null);
   const [pendingEdit, setPendingEdit] = useState<Omit<UserData, "id"> | null>(null);
+  const [isLoading, setIsLoading]   = useState(true);
 
   // Fetch users dari API
   useEffect(() => {
-    fetch("http://localhost:5000/api/users")
+    apiFetch("/api/users")
       .then((res) => res.json())
       .then((json) => {
         const rows: UserData[] = (json.data || []).map((u: any) => ({
@@ -220,7 +222,8 @@ export default function KelolaUserPage() {
         }));
         setUsers(rows);
       })
-      .catch((err) => console.error("Gagal fetch users:", err));
+      .catch((err) => console.error("Gagal fetch users:", err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const filtered = users.filter(
@@ -233,9 +236,8 @@ export default function KelolaUserPage() {
 
   const handleAdd = async (data: Omit<UserData, "id">) => {
     try {
-      const res = await fetch("http://localhost:5000/api/users", {
+      const res = await apiFetch("/api/users", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nama: data.nama, email: data.email, username: data.username, password: data.username + "123", role: data.role === "Super Admin" ? "super_admin" : data.role.toLowerCase() }),
       });
       const json = await res.json();
@@ -254,9 +256,8 @@ export default function KelolaUserPage() {
   const confirmEdit = async () => {
     if (!pendingEdit || !editUser) return;
     try {
-      await fetch(`http://localhost:5000/api/users/${editUser.id}`, {
+      await apiFetch(`/api/users/${editUser.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nama: pendingEdit.nama, email: pendingEdit.email, username: pendingEdit.username, role: pendingEdit.role === "Super Admin" ? "super_admin" : pendingEdit.role.toLowerCase(), status: pendingEdit.status.toLowerCase() }),
       });
       setUsers(users.map((u) => (u.id === editUser.id ? { ...u, ...pendingEdit } : u)));
@@ -267,7 +268,7 @@ export default function KelolaUserPage() {
 
   const handleDelete = async () => {
     try {
-      await fetch(`http://localhost:5000/api/users/${deleteUser!.id}`, { method: "DELETE" });
+      await apiFetch(`/api/users/${deleteUser!.id}`, { method: "DELETE" });
       setUsers(users.filter((u) => u.id !== deleteUser!.id));
     } catch (err) { console.error(err); }
     setDeleteUser(null);
@@ -356,7 +357,15 @@ export default function KelolaUserPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
+            {isLoading && (
+              <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-lg">
+                <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl shadow-md border border-gray-100">
+                  <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+                  <span className="text-sm font-medium text-text-secondary">Memuat data user...</span>
+                </div>
+              </div>
+            )}
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">

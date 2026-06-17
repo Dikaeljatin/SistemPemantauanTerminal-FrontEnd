@@ -1,7 +1,8 @@
 "use client";
 
-import { Settings, Upload, Download, TrendingUp } from "lucide-react";
+import { Settings, Upload, Download, TrendingUp, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { apiFetch } from "../../lib/api";
 
 export default function KonfigurasiPage() {
   const [importEnabled, setImportEnabled] = useState(false);
@@ -10,7 +11,7 @@ export default function KonfigurasiPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/konfigurasi")
+    apiFetch("/api/konfigurasi")
       .then((res) => res.json())
       .then((json) => {
         const config = json.data || {};
@@ -24,9 +25,8 @@ export default function KonfigurasiPage() {
 
   const toggleConfig = async (key: string, value: boolean) => {
     try {
-      await fetch("http://localhost:5000/api/konfigurasi", {
+      await apiFetch("/api/konfigurasi", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key, value: value ? "true" : "false" }),
       });
     } catch (err) {
@@ -52,7 +52,12 @@ export default function KonfigurasiPage() {
     toggleConfig("prediksi_enabled", newVal);
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-text-secondary">Memuat...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-64 gap-3">
+      <Loader2 className="w-6 h-6 text-sidebar animate-spin" />
+      <span className="text-sm text-text-secondary">Memuat konfigurasi...</span>
+    </div>
+  );
 
   return (
     <div className="space-y-6">

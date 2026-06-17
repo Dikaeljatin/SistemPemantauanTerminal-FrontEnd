@@ -2,12 +2,13 @@
 
 import { CarFront } from "lucide-react";
 import { useState, useEffect } from "react";
+import { apiFetch } from "../../lib/api";
 
 export default function TotalKendaraan() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/pergerakan")
+    apiFetch("/api/pergerakan")
       .then((res) => res.json())
       .then((json) => setTotal((json.data || []).length))
       .catch(() => setTotal(0));

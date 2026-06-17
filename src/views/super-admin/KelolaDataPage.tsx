@@ -1,7 +1,8 @@
 "use client";
 
 import { Tag, Plus, Trash2, Pencil, X, Database, Search, Filter, ChevronDown, Calendar, Activity, Clock, Loader2, Send } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "../../lib/api";
 
 interface JenisKendaraan {
   id: number;
@@ -30,21 +31,39 @@ const bulanList = [
   "Semua","Januari","Februari","Maret","April","Mei","Juni",
   "Juli","Agustus","September","Oktober","November","Desember",
 ];
-const bulanIndex: Record<string, number> = {
-  Januari:0,Februari:1,Maret:2,April:3,Mei:4,Juni:5,
-  Juli:6,Agustus:7,September:8,Oktober:9,November:10,Desember:11,
-};
 
-function parseTimestamp(ts: string): Date {
-  const [datePart, timePart] = ts.split(" ");
-  const [dd, mm, yyyy] = datePart.split("/").map(Number);
-  const [hh, min] = (timePart ?? "00:00").split(":").map(Number);
-  return new Date(yyyy, mm - 1, dd, hh, min);
+function mapPergerakanRow(item: any, idx: number): PergerakanRow {
+  let ts = "";
+  if (item.timestamp) {
+    const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
+    const [datePart, timePart] = raw.split(" ");
+    const [yyyy, mm, dd] = datePart.split("-");
+    const time = timePart ? timePart.slice(0, 5) : "00:00";
+    ts = `${dd}/${mm}/${yyyy} ${time}`;
+  }
+  return {
+    id: item.pergerakan_id ?? idx,
+    timestamp: ts,
+    status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
+    tnkb: item.tnkb || "",
+    jenis: item.jenis_kendaraan || "",
+    penumpangDatang: item.status_pergerakan === "kedatangan" ? item.jumlah_penumpang : 0,
+    penumpangBerangkat: item.status_pergerakan === "keberangkatan" ? item.jumlah_penumpang : 0,
+    trayekAsal: item.trayek_asal || "",
+    trayekTujuan: item.trayek_tujuan || "",
+    perusahaan: item.nama_perusahaan || "",
+    createdBy: item.created_by || "-",
+    updatedBy: item.updated_by || "-",
+    createdAt: item.created_at || "",
+    updatedAt: item.updated_at || "",
+  };
 }
 
 export default function KelolaDataPage() {
   // Jenis Kendaraan state
   const [data, setData] = useState<JenisKendaraan[]>([]);
+  const [isLoadingJenis, setIsLoadingJenis] = useState(true);
+  const [isLoadingActivity, setIsLoadingActivity] = useState(true);
   const [showTambah, setShowTambah] = useState(false);
   const [editItem, setEditItem] = useState<JenisKendaraan | null>(null);
   const [hapusItem, setHapusItem] = useState<JenisKendaraan | null>(null);
@@ -56,8 +75,11 @@ export default function KelolaDataPage() {
 
   // Data Pergerakan state
   const [pergerakanData, setPergerakanData] = useState<PergerakanRow[]>([]);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [serverTotalPages, setServerTotalPages] = useState(1);
   const [isLoadingPergerakan, setIsLoadingPergerakan] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterMode, setFilterMode] = useState<"bulanan" | "harian">("bulanan");
   const [bulan, setBulan] = useState("Semua");
   const [tahun, setTahun] = useState(new Date().getFullYear());
@@ -68,48 +90,52 @@ export default function KelolaDataPage() {
   const [rowsPerPage, setRowsPerPage] = useState(20);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/jenis-kendaraan")
+    setIsLoadingJenis(true);
+    apiFetch("/api/jenis-kendaraan")
       .then((res) => res.json())
       .then((json) => setData(json.data || []))
-      .catch(() => setData([]));
+      .catch(() => setData([]))
+      .finally(() => setIsLoadingJenis(false));
   }, []);
 
+  // Debounce search
   useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Reset halaman saat filter berubah
+  useEffect(() => { setCurrentPage(1); }, [filterMode, bulan, tahun, tanggal, debouncedSearch, rowsPerPage]);
+
+  // Fetch pergerakan dari server (server-side pagination)
+  const fetchPergerakan = useCallback(async () => {
     setIsLoadingPergerakan(true);
-    fetch("http://localhost:5000/api/pergerakan")
-      .then((res) => res.json())
-      .then((json) => {
-        const rows: PergerakanRow[] = (json.data || []).map((item: any, idx: number) => {
-          let ts = "";
-          if (item.timestamp) {
-            const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
-            const [datePart, timePart] = raw.split(" ");
-            const [yyyy, mm, dd] = datePart.split("-");
-            const time = timePart ? timePart.slice(0, 5) : "00:00";
-            ts = `${dd}/${mm}/${yyyy} ${time}`;
-          }
-          return {
-            id: item.pergerakan_id ?? idx,
-            timestamp: ts,
-            status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
-            tnkb: item.tnkb || "",
-            jenis: item.jenis_kendaraan || "",
-            penumpangDatang: item.status_pergerakan === "kedatangan" ? item.jumlah_penumpang : 0,
-            penumpangBerangkat: item.status_pergerakan === "keberangkatan" ? item.jumlah_penumpang : 0,
-            trayekAsal: item.trayek_asal || "",
-            trayekTujuan: item.trayek_tujuan || "",
-            perusahaan: item.nama_perusahaan || "",
-            createdBy: item.created_by || "-",
-            updatedBy: item.updated_by || "-",
-            createdAt: item.created_at || "",
-            updatedAt: item.updated_at || "",
-          };
-        });
-        setPergerakanData(rows);
-      })
-      .catch(() => setPergerakanData([]))
-      .finally(() => setIsLoadingPergerakan(false));
-  }, []);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(currentPage));
+      params.set("limit", String(rowsPerPage));
+      params.set("filter_mode", filterMode);
+      if (filterMode === "harian") {
+        params.set("tanggal", tanggal);
+      } else {
+        params.set("bulan", String(bulanList.indexOf(bulan)));
+        params.set("tahun", String(tahun));
+      }
+      if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+
+      const res = await apiFetch(`/api/pergerakan?${params.toString()}`);
+      const json = await res.json();
+      setPergerakanData((json.data || []).map(mapPergerakanRow));
+      setServerTotal(json.total ?? 0);
+      setServerTotalPages(json.totalPages ?? 1);
+    } catch {
+      setPergerakanData([]);
+    } finally {
+      setIsLoadingPergerakan(false);
+    }
+  }, [currentPage, rowsPerPage, filterMode, bulan, tahun, tanggal, debouncedSearch]);
+
+  useEffect(() => { fetchPergerakan(); }, [fetchPergerakan]);
 
   // Activity log state
   interface ActivityItem { id: number; username: string; action: string; description: string; detail: string | null; created_at: string; }
@@ -118,10 +144,12 @@ export default function KelolaDataPage() {
   const [actFilterAction, setActFilterAction] = useState<"semua" | "create" | "update" | "delete" | "kirim">("semua");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/activity")
+    setIsLoadingActivity(true);
+    apiFetch("/api/activity")
       .then((res) => res.json())
       .then((json) => setActivities(json.data || []))
-      .catch(() => setActivities([]));
+      .catch(() => setActivities([]))
+      .finally(() => setIsLoadingActivity(false));
   }, []);
 
   const filteredActivities = activities.filter((a) => {
@@ -134,38 +162,16 @@ export default function KelolaDataPage() {
     return true;
   });
 
-  // Filter pergerakan data
-  const filteredPergerakan = pergerakanData.filter((k) => {
-    const date = parseTimestamp(k.timestamp);
-    if (filterMode === "harian") {
-      const [yyyy, mm, dd] = tanggal.split("-").map(Number);
-      if (!(date.getFullYear() === yyyy && date.getMonth() === mm - 1 && date.getDate() === dd)) return false;
-    } else {
-      if (!(bulan === "Semua" || date.getMonth() === bulanIndex[bulan]) || date.getFullYear() !== tahun) return false;
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return k.tnkb.toLowerCase().includes(q) || k.trayekAsal.toLowerCase().includes(q) ||
-        k.trayekTujuan.toLowerCase().includes(q) || k.perusahaan.toLowerCase().includes(q) ||
-        k.createdBy.toLowerCase().includes(q) || k.updatedBy.toLowerCase().includes(q);
-    }
-    return true;
-  });
-
-  const totalItems = filteredPergerakan.length;
-  const totalPages = Math.ceil(totalItems / rowsPerPage);
+  const totalItems = serverTotal;
+  const totalPages = serverTotalPages;
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedPergerakan = filteredPergerakan.slice(startIndex, endIndex);
-
-  useEffect(() => { setCurrentPage(1); }, [filterMode, bulan, tahun, tanggal, searchQuery]);
+  const paginatedPergerakan = pergerakanData;
 
   const handleTambah = async () => {
     if (!formNama.trim()) { setError("Nama wajib diisi"); return; }
     try {
-      const res = await fetch("http://localhost:5000/api/jenis-kendaraan", {
+      const res = await apiFetch("/api/jenis-kendaraan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nama: formNama.trim(), kapasitas: parseInt(formKapasitas) || 10 }),
       });
       const json = await res.json();
@@ -178,9 +184,8 @@ export default function KelolaDataPage() {
   const handleEdit = async () => {
     if (!editItem || !formNama.trim()) return;
     try {
-      await fetch(`http://localhost:5000/api/jenis-kendaraan/${editItem.id}`, {
+      await apiFetch(`/api/jenis-kendaraan/${editItem.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nama: formNama.trim(), kapasitas: parseInt(formKapasitas) || 10 }),
       });
       setData(data.map((d) => d.id === editItem.id ? { ...d, nama: formNama.trim(), kapasitas: parseInt(formKapasitas) || 10 } : d));
@@ -191,7 +196,7 @@ export default function KelolaDataPage() {
   const handleHapus = async () => {
     if (!hapusItem) return;
     try {
-      await fetch(`http://localhost:5000/api/jenis-kendaraan/${hapusItem.id}`, { method: "DELETE" });
+      await apiFetch(`/api/jenis-kendaraan/${hapusItem.id}`, { method: "DELETE" });
       setData(data.filter((d) => d.id !== hapusItem.id));
     } catch { /* ignore */ }
     setHapusItem(null);
@@ -220,7 +225,12 @@ export default function KelolaDataPage() {
             <Plus className="w-4 h-4" /> Tambah Jenis
           </button>
         </div>
-        {data.length === 0 ? (
+        {isLoadingJenis ? (
+          <div className="flex items-center justify-center gap-2 py-8">
+            <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+            <span className="text-sm text-text-secondary">Memuat data...</span>
+          </div>
+        ) : data.length === 0 ? (
           <p className="text-text-secondary text-sm py-6 text-center">Belum ada jenis kendaraan.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -302,7 +312,17 @@ export default function KelolaDataPage() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
+        <div className="relative -mx-2 sm:mx-0 px-2 sm:px-0">
+          {/* Loading overlay saat pindah halaman */}
+          {isLoadingPergerakan && (
+            <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-lg">
+              <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl shadow-md border border-gray-100">
+                <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+                <span className="text-sm font-medium text-text-secondary">Memuat data...</span>
+              </div>
+            </div>
+          )}
+          <div className="overflow-x-auto">
           <table className="w-full min-w-[1500px]">
             <thead>
               <tr className="border-b border-gray-200">
@@ -312,14 +332,7 @@ export default function KelolaDataPage() {
               </tr>
             </thead>
             <tbody>
-              {isLoadingPergerakan ? (
-                <tr><td colSpan={14} className="px-3 py-12 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
-                    <span className="text-text-secondary text-sm">Memuat data pergerakan...</span>
-                  </div>
-                </td></tr>
-              ) : paginatedPergerakan.length === 0 ? (
+              {paginatedPergerakan.length === 0 && !isLoadingPergerakan ? (
                 <tr><td colSpan={14} className="px-3 py-10 text-center text-sm text-text-secondary">Tidak ada data.</td></tr>
               ) : (
                 paginatedPergerakan.map((k, idx) => (
@@ -361,13 +374,14 @@ export default function KelolaDataPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-5 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-4">
-              <span className="text-sm text-text-secondary">Menampilkan {startIndex + 1}–{Math.min(endIndex, totalItems)} dari {totalItems} data</span>
+              <span className="text-sm text-text-secondary">Menampilkan {startIndex + 1}–{startIndex + paginatedPergerakan.length} dari {totalItems} data</span>
               <div className="flex items-center gap-2">
                 <label className="text-sm text-text-secondary">Per halaman:</label>
                 <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30">
@@ -376,8 +390,8 @@ export default function KelolaDataPage() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary">«</button>
-              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary">‹</button>
+              <button onClick={() => setCurrentPage(1)} disabled={isLoadingPergerakan || currentPage === 1} className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary">«</button>
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={isLoadingPergerakan || currentPage === 1} className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary">‹</button>
               {(() => {
                 const pages: (number | string)[] = [];
                 const maxVisible = 5;
@@ -390,11 +404,11 @@ export default function KelolaDataPage() {
                 return pages.map((p, i) => typeof p === "string" ? (
                   <span key={`e-${i}`} className="px-2 py-1.5 text-sm text-text-secondary">…</span>
                 ) : (
-                  <button key={p} onClick={() => setCurrentPage(p)} className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === p ? "bg-sidebar text-white font-semibold" : "hover:bg-gray-100 text-text-secondary"}`}>{p}</button>
+                  <button key={p} onClick={() => !isLoadingPergerakan && setCurrentPage(p)} disabled={isLoadingPergerakan} className={`px-3 py-1.5 text-sm rounded-lg transition-colors disabled:cursor-not-allowed ${currentPage === p ? "bg-sidebar text-white font-semibold" : "hover:bg-gray-100 text-text-secondary"}`}>{p}</button>
                 ));
               })()}
-              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary">›</button>
-              <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary">»</button>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={isLoadingPergerakan || currentPage === totalPages} className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary">›</button>
+              <button onClick={() => setCurrentPage(totalPages)} disabled={isLoadingPergerakan || currentPage === totalPages} className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary">»</button>
             </div>
           </div>
         )}
@@ -422,6 +436,12 @@ export default function KelolaDataPage() {
           </div>
         </div>
 
+        {isLoadingActivity ? (
+          <div className="flex items-center justify-center gap-2 py-8">
+            <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+            <span className="text-sm text-text-secondary">Memuat aktivitas...</span>
+          </div>
+        ) : (
         <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
           <table className="w-full min-w-[700px]">
             <thead className="sticky top-0 bg-white">
@@ -457,6 +477,7 @@ export default function KelolaDataPage() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* Modal Tambah */}

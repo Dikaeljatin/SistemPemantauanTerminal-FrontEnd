@@ -1,7 +1,8 @@
 "use client";
 
-import { Inbox, Eye, Clock, CheckCheck, X, Search, Filter, ChevronDown, Download, FileText } from "lucide-react";
+import { Inbox, Eye, Clock, CheckCheck, X, Search, Filter, ChevronDown, Download, FileText, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { apiFetch } from "../../lib/api";
 
 interface LaporanMasuk {
   id: number;
@@ -61,7 +62,7 @@ function DetailModal({ item, onClose, onMarkRead }: { item: LaporanMasuk; onClos
               <CheckCheck className="w-4 h-4" /> Tandai Sudah Dibaca
             </button>
           )}
-          <button onClick={() => { window.open(`http://localhost:5000/api/laporan/${item.id}/export`, '_blank'); }} className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition-colors">
+          <button onClick={async () => { const r = await apiFetch(`/api/laporan/${item.id}/export`); const blob = await r.blob(); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `Laporan_${item.id}.xlsx`; a.click(); URL.revokeObjectURL(url); }} className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition-colors">
             <Download className="w-4 h-4" /> Download Excel
           </button>
           <button onClick={onClose} className="flex-1 bg-gray-100 hover:bg-gray-200 text-text-secondary font-semibold py-3 rounded-xl transition-colors">Tutup</button>
@@ -73,6 +74,7 @@ function DetailModal({ item, onClose, onMarkRead }: { item: LaporanMasuk; onClos
 
 export default function LaporanMasukPage() {
   const [laporan, setLaporan] = useState<LaporanMasuk[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [detailItem, setDetailItem] = useState<LaporanMasuk | null>(null);
   const [filterStatus, setFilterStatus] = useState<"semua" | "belum-dibaca" | "dibaca">("semua");
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,7 +82,7 @@ export default function LaporanMasukPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/laporan")
+    apiFetch("/api/laporan")
       .then((res) => res.json())
       .then((json) => {
         const rows: LaporanMasuk[] = (json.data || []).map((item: any) => {
@@ -102,19 +104,20 @@ export default function LaporanMasukPage() {
         });
         setLaporan(rows);
       })
-      .catch((err) => console.error("Gagal fetch laporan:", err));
+      .catch((err) => console.error("Gagal fetch laporan:", err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleMarkRead = async (id: number) => {
     try {
-      await fetch(`http://localhost:5000/api/laporan/${id}/read`, { method: "PATCH" });
+      await apiFetch(`/api/laporan/${id}/read`, { method: "PATCH" });
       setLaporan((prev) => prev.map((l) => l.id === id ? { ...l, status: "dibaca" } : l));
     } catch (err) { console.error("Gagal mark read:", err); }
   };
 
   const handleMarkAllRead = async () => {
     try {
-      await fetch("http://localhost:5000/api/laporan/read-all", { method: "PATCH" });
+      await apiFetch("/api/laporan/read-all", { method: "PATCH" });
       setLaporan((prev) => prev.map((l) => ({ ...l, status: "dibaca" })));
     } catch (err) { console.error("Gagal mark all read:", err); }
   };
@@ -208,7 +211,15 @@ export default function LaporanMasukPage() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden md:block relative overflow-x-auto">
+            {isLoading && (
+              <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-lg min-h-[120px]">
+                <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl shadow-md border border-gray-100">
+                  <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+                  <span className="text-sm font-medium text-text-secondary">Memuat laporan...</span>
+                </div>
+              </div>
+            )}
             <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="border-b border-gray-200">
@@ -242,7 +253,7 @@ export default function LaporanMasukPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <button onClick={(e) => { e.stopPropagation(); window.open(`http://localhost:5000/api/laporan/${item.id}/export`, '_blank'); }} className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Download Excel">
+                        <button onClick={async (e) => { e.stopPropagation(); const r = await apiFetch(`/api/laporan/${item.id}/export`); const blob = await r.blob(); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `Laporan_${item.id}.xlsx`; a.click(); URL.revokeObjectURL(url); }} className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Download Excel">
                           <Download className="w-4 h-4" />
                         </button>
                       </td>
@@ -272,7 +283,7 @@ export default function LaporanMasukPage() {
                       </span>
                     </div>
                     <button
-                      onClick={(e) => { e.stopPropagation(); window.open(`http://localhost:5000/api/laporan/${item.id}/export`, '_blank'); }}
+                      onClick={async (e) => { e.stopPropagation(); const r = await apiFetch(`/api/laporan/${item.id}/export`); const blob = await r.blob(); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `Laporan_${item.id}.xlsx`; a.click(); URL.revokeObjectURL(url); }}
                       className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors flex-shrink-0"
                       title="Download Excel"
                     >

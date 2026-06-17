@@ -1,17 +1,13 @@
 "use client";
 
 import { CarFront, Filter, ChevronDown, Calendar, Trash2, Pencil, X, Upload, Download, FileSpreadsheet, Search, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { apiFetch } from "../../lib/api";
+import { useState, useEffect, useCallback } from "react";
 
 const bulanList = [
   "Semua", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
-
-const bulanIndex: Record<string, number> = {
-  Januari:0, Februari:1, Maret:2, April:3, Mei:4, Juni:5,
-  Juli:6, Agustus:7, September:8, Oktober:9, November:10, Desember:11,
-};
 
 // Helper: format tanggal ke string lokal Indonesia
 function formatTanggal(dateStr: string) {
@@ -19,13 +15,6 @@ function formatTanggal(dateStr: string) {
   const [year, month, day] = dateStr.split("-");
   const bulanNama = bulanList[parseInt(month, 10) - 1];
   return `${parseInt(day, 10)} ${bulanNama} ${year}`;
-}
-
-function parseTimestamp(ts: string): Date {
-  const [datePart, timePart] = ts.split(" ");
-  const [dd, mm, yyyy] = datePart.split("/").map(Number);
-  const [hh, min] = (timePart ?? "00:00").split(":").map(Number);
-  return new Date(yyyy, mm - 1, dd, hh, min);
 }
 
 interface KendaraanRow {
@@ -42,9 +31,38 @@ interface KendaraanRow {
   createdBy: string;
 }
 
+function mapRow(item: any, idx: number): KendaraanRow {
+  let ts = "";
+  if (item.timestamp) {
+    const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
+    const [datePart, timePart] = raw.split(" ");
+    const [yyyy, mm, dd] = datePart.split("-");
+    const time = timePart ? timePart.slice(0, 5) : "00:00";
+    ts = `${dd}/${mm}/${yyyy} ${time}`;
+  }
+  return {
+    id: item.pergerakan_id ?? idx,
+    timestamp: ts,
+    status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
+    tnkb: item.tnkb || "",
+    jenis: item.jenis_kendaraan || "",
+    penumpangDatang: item.status_pergerakan === "kedatangan" ? item.jumlah_penumpang : 0,
+    penumpangBerangkat: item.status_pergerakan === "keberangkatan" ? item.jumlah_penumpang : 0,
+    trayekAsal: item.trayek_asal || "",
+    trayekTujuan: item.trayek_tujuan || "",
+    perusahaan: item.nama_perusahaan || "",
+    createdBy: item.created_by || "",
+  };
+}
+
 export default function PetugasDataKendaraanPage() {
+  // Data halaman saat ini (dari server)
   const [kendaraanData, setKendaraanData] = useState<KendaraanRow[]>([]);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [serverTotalPages, setServerTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Filter
   const [filterMode, setFilterMode] = useState<"bulanan" | "harian">("bulanan");
   const [bulan, setBulan] = useState("Januari");
   const [tahun, setTahun] = useState(new Date().getFullYear());
@@ -52,9 +70,16 @@ export default function PetugasDataKendaraanPage() {
   const [filterStatus, setFilterStatus] = useState<"semua" | "Kedatangan" | "Keberangkatan">("semua");
   const today = new Date().toISOString().split("T")[0];
   const [tanggal, setTanggal] = useState(today);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
+
+  // Lain-lain
   const [importEnabled, setImportEnabled] = useState(false);
   const [exportEnabled, setExportEnabled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [showImportModal, setShowImportModal] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
@@ -65,7 +90,7 @@ export default function PetugasDataKendaraanPage() {
 
   // Fetch konfigurasi
   useEffect(() => {
-    fetch("http://localhost:5000/api/konfigurasi")
+    apiFetch("/api/konfigurasi")
       .then((res) => res.json())
       .then((json) => {
         const config = json.data || {};
@@ -75,86 +100,55 @@ export default function PetugasDataKendaraanPage() {
       .catch(() => {});
   }, []);
 
-  // Fetch data dari API
+  // Debounce search 400ms agar tidak fetch setiap ketikan
   useEffect(() => {
-    setIsLoading(true);
-    fetch("http://localhost:5000/api/pergerakan")
-      .then((res) => res.json())
-      .then((json) => {
-        const rows: KendaraanRow[] = (json.data || []).map((item: any, idx: number) => {
-          // Timestamp dari DB format: "2026-05-12T07:30:00.000Z" atau "2026-05-12 07:30:00"
-          // Tampilkan langsung tanpa konversi timezone
-          let ts = "";
-          if (item.timestamp) {
-            const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
-            const [datePart, timePart] = raw.split(" ");
-            const [yyyy, mm, dd] = datePart.split("-");
-            const time = timePart ? timePart.slice(0, 5) : "00:00";
-            ts = `${dd}/${mm}/${yyyy} ${time}`;
-          }
-          const statusLabel = item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan";
-          return {
-            id: item.pergerakan_id ?? idx,
-            timestamp: ts,
-            status: statusLabel,
-            tnkb: item.tnkb || "",
-            jenis: item.jenis_kendaraan || "",
-            penumpangDatang: item.status_pergerakan === "kedatangan" ? item.jumlah_penumpang : 0,
-            penumpangBerangkat: item.status_pergerakan === "keberangkatan" ? item.jumlah_penumpang : 0,
-            trayekAsal: item.trayek_asal || "",
-            trayekTujuan: item.trayek_tujuan || "",
-            perusahaan: item.nama_perusahaan || "",
-            createdBy: item.created_by || "",
-          };
-        });
-        setKendaraanData(rows);
-      })
-      .catch((err) => console.error("Gagal fetch data:", err))
-      .finally(() => setIsLoading(false));
-  }, []);
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
-
-  const displayData = kendaraanData.filter((k) => {
-    // Filter periode
-    const date = parseTimestamp(k.timestamp);
-    if (filterMode === "harian") {
-      const [yyyy, mm, dd] = tanggal.split("-").map(Number);
-      if (!(date.getFullYear() === yyyy && date.getMonth() === mm - 1 && date.getDate() === dd)) return false;
-    } else {
-      if (!(bulan === "Semua" || date.getMonth() === bulanIndex[bulan]) || date.getFullYear() !== tahun) return false;
-    }
-    // Filter status
-    const matchStatus = filterStatus === "semua" || k.status === filterStatus;
-    if (!matchStatus) return false;
-    // Filter search
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return (
-        k.tnkb.toLowerCase().includes(q) ||
-        k.jenis.toLowerCase().includes(q) ||
-        k.trayekAsal.toLowerCase().includes(q) ||
-        k.trayekTujuan.toLowerCase().includes(q) ||
-        k.perusahaan.toLowerCase().includes(q) ||
-        k.timestamp.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
-
-  // Pagination logic
-  const totalItems = displayData.length;
-  const totalPages = Math.ceil(totalItems / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedData = displayData.slice(startIndex, endIndex);
-
-  // Reset page when filter changes
+  // Kembali ke halaman 1 saat filter berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterMode, bulan, tahun, tanggal, filterStatus, searchQuery]);
+  }, [filterMode, bulan, tahun, tanggal, filterStatus, debouncedSearch, rowsPerPage]);
+
+  // Fetch data dari server (server-side pagination + filter)
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(currentPage));
+      params.set("limit", String(rowsPerPage));
+      params.set("filter_mode", filterMode);
+      if (filterMode === "harian") {
+        params.set("tanggal", tanggal);
+      } else {
+        params.set("bulan", String(bulanList.indexOf(bulan)));
+        params.set("tahun", String(tahun));
+      }
+      if (filterStatus !== "semua") params.set("status", filterStatus.toLowerCase());
+      if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+
+      const res = await apiFetch(`/api/pergerakan?${params.toString()}`);
+      const json = await res.json();
+      setKendaraanData((json.data || []).map(mapRow));
+      setServerTotal(json.total ?? 0);
+      setServerTotalPages(json.totalPages ?? 1);
+    } catch (err) {
+      console.error("Gagal fetch data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, rowsPerPage, filterMode, bulan, tahun, tanggal, filterStatus, debouncedSearch]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Alias untuk kemudahan
+  const totalItems = serverTotal;
+  const totalPages = serverTotalPages;
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedData = kendaraanData;
 
   const [hapusId, setHapusId] = useState<number | null>(null);
   const [editItem, setEditItem] = useState<KendaraanRow | null>(null);
@@ -167,14 +161,13 @@ export default function PetugasDataKendaraanPage() {
   const handleHapus = async () => {
     if (!hapusId) return;
     try {
-      await fetch(`http://localhost:5000/api/pergerakan/${hapusId}`, {
+      await apiFetch(`/api/pergerakan/${hapusId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deleted_by: sessionStorage.getItem("app_username") || "Petugas" }),
       });
-      setKendaraanData((prev) => prev.filter((k) => k.id !== hapusId));
       setShowDeleteSuccess(true);
       setTimeout(() => setShowDeleteSuccess(false), 3000);
+      fetchData();
     } catch (err) {
       console.error("Gagal hapus:", err);
     }
@@ -201,9 +194,8 @@ export default function PetugasDataKendaraanPage() {
   const handleEdit = async () => {
     if (!editItem) return;
     try {
-      await fetch(`http://localhost:5000/api/pergerakan/${editItem.id}`, {
+      await apiFetch(`/api/pergerakan/${editItem.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tnkb: editForm.tnkb,
           trayek_asal: editForm.trayekAsal,
@@ -215,26 +207,7 @@ export default function PetugasDataKendaraanPage() {
           updated_by: sessionStorage.getItem("app_username") || null,
         }),
       });
-      // Update local state
-      setKendaraanData((prev) => prev.map((k) => {
-        if (k.id !== editItem.id) return k;
-        const [datePart, timePart] = editForm.timestamp.split("T");
-        const [yyyy, mm, dd] = datePart.split("-");
-        const ts = `${dd}/${mm}/${yyyy} ${timePart || "00:00"}`;
-        const statusLabel = editForm.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan";
-        const penumpang = parseInt(editForm.jumlah_penumpang) || 0;
-        return {
-          ...k,
-          tnkb: editForm.tnkb,
-          timestamp: ts,
-          status: statusLabel,
-          trayekAsal: editForm.trayekAsal,
-          trayekTujuan: editForm.trayekTujuan,
-          penumpangDatang: editForm.status_pergerakan === "kedatangan" ? penumpang : 0,
-          penumpangBerangkat: editForm.status_pergerakan === "keberangkatan" ? penumpang : 0,
-          perusahaan: editForm.perusahaan,
-        };
-      }));
+      fetchData();
     } catch (err) {
       console.error("Gagal edit:", err);
     }
@@ -252,7 +225,7 @@ export default function PetugasDataKendaraanPage() {
       formData.append("file", importFile);
       formData.append("created_by", sessionStorage.getItem("app_username") || "");
 
-      const res = await fetch("http://localhost:5000/api/pergerakan/import", {
+      const res = await apiFetch("/api/pergerakan/import", {
         method: "POST",
         body: formData,
       });
@@ -264,40 +237,13 @@ export default function PetugasDataKendaraanPage() {
         setShowImportError(json.error || "Gagal import data");
       } else {
         setImportResult({ message: json.message, errors: json.errors });
-        // Show success popup and close import modal
         if (json.imported > 0) {
           setShowImportModal(false);
           setImportFile(null);
           setImportResult(null);
           setShowImportSuccess(true);
           setTimeout(() => setShowImportSuccess(false), 3000);
-          // Refresh data
-          const dataRes = await fetch("http://localhost:5000/api/pergerakan");
-          const dataJson = await dataRes.json();
-          const rows = (dataJson.data || []).map((item: any, idx: number) => {
-            let ts = "";
-            if (item.timestamp) {
-              const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
-              const [datePart, timePart] = raw.split(" ");
-              const [yyyy, mm, dd] = datePart.split("-");
-              const time = timePart ? timePart.slice(0, 5) : "00:00";
-              ts = `${dd}/${mm}/${yyyy} ${time}`;
-            }
-            return {
-              id: item.pergerakan_id ?? idx,
-              timestamp: ts,
-              status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
-              tnkb: item.tnkb || "",
-              jenis: item.jenis_kendaraan || "",
-              penumpangDatang: item.status_pergerakan === "kedatangan" ? item.jumlah_penumpang : 0,
-              penumpangBerangkat: item.status_pergerakan === "keberangkatan" ? item.jumlah_penumpang : 0,
-              trayekAsal: item.trayek_asal || "",
-              trayekTujuan: item.trayek_tujuan || "",
-              perusahaan: item.nama_perusahaan || "",
-              createdBy: item.created_by || "",
-            };
-          });
-          setKendaraanData(rows);
+          fetchData();
         }
       }
     } catch (err) {
@@ -325,7 +271,12 @@ export default function PetugasDataKendaraanPage() {
                 <p className="text-blue-700 text-sm font-medium mb-1">Format File</p>
                 <p className="text-blue-600 text-xs">File Excel (.xlsx) harus sesuai dengan template yang disediakan. Pastikan kolom: Timestamp, Status, TNKB, Jenis Kendaraan, Jumlah Penumpang Kedatangan, Jumlah Penumpang Keberangkatan, Trayek Asal, Trayek Tujuan, Nama Perusahaan.</p>
                 <button
-                  onClick={() => window.open("http://localhost:5000/api/pergerakan/template", "_blank")}
+                  onClick={async () => {
+                    const r = await apiFetch("/api/pergerakan/template");
+                    const blob = await r.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a"); a.href = url; a.download = "Template_Import_Data_Kendaraan.xlsx"; a.click(); URL.revokeObjectURL(url);
+                  }}
                   className="mt-2 text-blue-700 text-xs font-semibold underline underline-offset-2"
                 >
                   Download Template
@@ -406,26 +357,25 @@ export default function PetugasDataKendaraanPage() {
                     : `Bulanan — ${bulan} ${tahun}`
                   }
                 </p>
-                <p className="text-xs text-text-secondary mt-1">{displayData.length} data akan diexport</p>
+                <p className="text-xs text-text-secondary mt-1">{serverTotal} data akan diexport</p>
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => {
-                  let url = "http://localhost:5000/api/pergerakan/export";
+                onClick={async () => {
                   const params = new URLSearchParams();
-                  if (filterMode === "harian") {
-                    params.set("tanggal", tanggal);
-                  } else {
-                    params.set("bulan", bulan);
-                    params.set("tahun", String(tahun));
-                  }
-                  url += "?" + params.toString();
-                  window.open(url, "_blank");
+                  if (filterMode === "harian") { params.set("tanggal", tanggal); }
+                  else { params.set("bulan", bulan); params.set("tahun", String(tahun)); }
+                  const r = await apiFetch(`/api/pergerakan/export?${params.toString()}`);
+                  const blob = await r.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a"); a.href = url;
+                  a.download = `Export_Data_Kendaraan_${filterMode === "harian" ? tanggal : bulan + "_" + tahun}.xlsx`;
+                  a.click(); URL.revokeObjectURL(url);
                   setShowExportModal(false);
                 }}
-                disabled={displayData.length === 0}
+                disabled={serverTotal === 0}
                 className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors"
               >
                 <Download className="w-4 h-4" /> Download Excel
@@ -607,7 +557,7 @@ export default function PetugasDataKendaraanPage() {
             </button>
           )}
           <button
-            onClick={() => window.open("http://localhost:5000/api/pergerakan/template", "_blank")}
+            onClick={async () => { const r = await apiFetch("/api/pergerakan/template"); const blob = await r.blob(); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "Template_Import_Data_Kendaraan.xlsx"; a.click(); URL.revokeObjectURL(url); }}
             className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" /> Template Excel
@@ -746,7 +696,17 @@ export default function PetugasDataKendaraanPage() {
 
         {/* Table */}
         {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block">
+          <div className="relative overflow-x-auto">
+            {/* Loading overlay — muncul saat pindah halaman, data lama tetap terlihat */}
+            {isLoading && (
+              <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-lg">
+                <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl shadow-md border border-gray-100">
+                  <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+                  <span className="text-sm font-medium text-text-secondary">Memuat data...</span>
+                </div>
+              </div>
+            )}
           <table className="w-full min-w-[1000px]">
             <thead>
               <tr className="border-b border-gray-200">
@@ -764,16 +724,7 @@ export default function PetugasDataKendaraanPage() {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={11} className="px-4 py-12 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
-                      <span className="text-text-secondary text-sm">Memuat data kendaraan...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : paginatedData.length === 0 ? (
+              {paginatedData.length === 0 && !isLoading ? (
                 <tr>
                   <td colSpan={11} className="px-4 py-10 text-center text-sm text-text-secondary">
                     Tidak ada data yang sesuai filter.
@@ -832,16 +783,21 @@ export default function PetugasDataKendaraanPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Mobile Card View */}
-        <div className="md:hidden space-y-3">
-          {isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-12">
-              <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
-              <span className="text-text-secondary text-sm">Memuat data kendaraan...</span>
+        <div className="md:hidden relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-lg min-h-[80px]">
+              <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl shadow-md border border-gray-100">
+                <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+                <span className="text-sm font-medium text-text-secondary">Memuat data...</span>
+              </div>
             </div>
-          ) : paginatedData.length === 0 ? (
+          )}
+          <div className="space-y-3">
+          {paginatedData.length === 0 && !isLoading ? (
             <div className="py-10 text-center text-sm text-text-secondary">Tidak ada data yang sesuai filter.</div>
           ) : (
             paginatedData.map((k, idx) => {
@@ -890,6 +846,7 @@ export default function PetugasDataKendaraanPage() {
               );
             })
           )}
+          </div>
         </div>
 
         {/* Pagination Controls */}
@@ -897,7 +854,7 @@ export default function PetugasDataKendaraanPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-5 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-4">
               <span className="text-sm text-text-secondary">
-                Menampilkan {startIndex + 1}–{Math.min(endIndex, totalItems)} dari {totalItems} data
+                Menampilkan {startIndex + 1}–{startIndex + paginatedData.length} dari {totalItems} data
               </span>
               <div className="flex items-center gap-2">
                 <label className="text-sm text-text-secondary">Per halaman:</label>
@@ -916,14 +873,14 @@ export default function PetugasDataKendaraanPage() {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setCurrentPage(1)}
-                disabled={currentPage === 1}
+                disabled={isLoading || currentPage === 1}
                 className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
               >
                 «
               </button>
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
+                disabled={isLoading || currentPage === 1}
                 className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
               >
                 ‹
@@ -946,8 +903,9 @@ export default function PetugasDataKendaraanPage() {
                   ) : (
                     <button
                       key={p}
-                      onClick={() => setCurrentPage(p)}
-                      className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                      onClick={() => !isLoading && setCurrentPage(p)}
+                      disabled={isLoading}
+                      className={`px-3 py-1.5 text-sm rounded-lg transition-colors disabled:cursor-not-allowed ${
                         currentPage === p
                           ? "bg-sidebar text-white font-semibold"
                           : "hover:bg-gray-100 text-text-secondary"
@@ -961,14 +919,14 @@ export default function PetugasDataKendaraanPage() {
 
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
+                disabled={isLoading || currentPage === totalPages}
                 className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
               >
                 ›
               </button>
               <button
                 onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
+                disabled={isLoading || currentPage === totalPages}
                 className="px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 text-text-secondary"
               >
                 »

@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { apiFetch } from "../../lib/api";
 
 export default function PieChartCard() {
   const [data, setData] = useState<{ name: string; value: number; color: string }[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/pergerakan")
+    apiFetch("/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
         let kedatangan = 0;

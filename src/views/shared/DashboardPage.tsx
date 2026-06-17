@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CarFront, CalendarDays, Calendar, Filter, ChevronDown, ArrowUpDown } from "lucide-react";
+import { apiFetch } from "../../lib/api";
+import { CarFront, CalendarDays, Calendar, Filter, ChevronDown, ArrowUpDown, Loader2 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, PieChart, Pie,
@@ -34,6 +35,7 @@ type FilterStatus = "semua" | "Kedatangan" | "Keberangkatan";
 
 export default function DashboardPage() {
   const [allData, setAllData] = useState<KendaraanRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterMode, setFilterMode] = useState<FilterMode>("bulanan");
   const [bulan, setBulan] = useState("Januari");
   const [tahun, setTahun] = useState(new Date().getFullYear());
@@ -42,7 +44,8 @@ export default function DashboardPage() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("semua");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/pergerakan")
+    setIsLoading(true);
+    apiFetch("/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
         const rows: KendaraanRow[] = (json.data || []).map((item: any, idx: number) => {
@@ -69,7 +72,8 @@ export default function DashboardPage() {
         });
         setAllData(rows);
       })
-      .catch((err) => console.error("Gagal fetch:", err));
+      .catch((err) => console.error("Gagal fetch:", err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   // Filter data
@@ -157,6 +161,17 @@ export default function DashboardPage() {
 
         <span className="text-xs text-text-secondary ml-auto">{filteredData.length} data</span>
       </div>
+
+      {/* Konten utama dengan overlay loading */}
+      <div className="relative space-y-6">
+      {isLoading && (
+        <div className="absolute inset-0 bg-white/80 z-20 flex items-center justify-center rounded-2xl min-h-64">
+          <div className="flex flex-col items-center gap-3 bg-white px-8 py-6 rounded-2xl shadow-lg border border-gray-100">
+            <Loader2 className="w-8 h-8 text-sidebar animate-spin" />
+            <span className="text-sm font-medium text-text-secondary">Memuat data dashboard...</span>
+          </div>
+        </div>
+      )}
 
       {/* Total Kendaraan */}
       <div className="bg-sidebar rounded-2xl px-6 sm:px-8 py-5 flex items-center gap-4 shadow-lg">
@@ -379,6 +394,7 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

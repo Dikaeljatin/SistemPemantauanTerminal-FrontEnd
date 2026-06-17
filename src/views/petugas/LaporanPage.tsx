@@ -2,9 +2,10 @@
 
 import {
   FileText, Send, CalendarDays, Calendar,
-  Filter, ChevronDown, CheckCircle, Clock, Eye, X,
+  Filter, ChevronDown, CheckCircle, Clock, Eye, X, Loader2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { apiFetch } from "../../lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface LaporanItem {
@@ -100,6 +101,7 @@ function DetailModal({ item, onClose }: { item: LaporanItem; onClose: () => void
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function LaporanPage() {
   const [kendaraanData, setKendaraanData] = useState<KendaraanRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterMode, setFilterMode] = useState<"harian"|"bulanan">("harian");
   const [openDropdown, setOpenDropdown] = useState(false);
   const [selectedBulan, setSelectedBulan] = useState("Mei");
@@ -119,7 +121,7 @@ export default function LaporanPage() {
   useEffect(() => {
     const username = typeof window !== "undefined" ? sessionStorage.getItem("app_username") : null;
     if (!username) return;
-    fetch("http://localhost:5000/api/users")
+    apiFetch("/api/users")
       .then((res) => res.json())
       .then((json) => {
         const user = (json.data || []).find((u: any) => u.username === username);
@@ -131,7 +133,7 @@ export default function LaporanPage() {
 
   // Fetch data kendaraan dari API
   useEffect(() => {
-    fetch("http://localhost:5000/api/pergerakan")
+    apiFetch("/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
         const rows: KendaraanRow[] = (json.data || []).map((item: any, idx: number) => {
@@ -158,12 +160,13 @@ export default function LaporanPage() {
         });
         setKendaraanData(rows);
       })
-      .catch((err) => console.error("Gagal fetch kendaraan:", err));
+      .catch((err) => console.error("Gagal fetch kendaraan:", err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   // Fetch riwayat laporan dari API
   useEffect(() => {
-    fetch("http://localhost:5000/api/laporan")
+    apiFetch("/api/laporan")
       .then((res) => res.json())
       .then((json) => {
         const rows: LaporanItem[] = (json.data || []).map((item: any) => {
@@ -226,9 +229,8 @@ export default function LaporanPage() {
     // Ambil nama petugas dari session
     // Kirim ke backend
     try {
-      await fetch("http://localhost:5000/api/laporan", {
+      await apiFetch("/api/laporan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           petugas_nama: petugasNama,
           periode: periodeLabel,
@@ -429,7 +431,15 @@ export default function LaporanPage() {
               </span>
             </p>
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100">
+            <div className="hidden md:block relative overflow-x-auto rounded-xl border border-gray-100">
+              {isLoading && (
+                <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-xl min-h-24">
+                  <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl shadow-md border border-gray-100">
+                    <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+                    <span className="text-sm font-medium text-text-secondary">Memuat data...</span>
+                  </div>
+                </div>
+              )}
               <table className="w-full min-w-[900px] text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">

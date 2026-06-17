@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, User, Mail, Lock, Eye, EyeOff, Check } from "lucide-react";
+import { apiFetch } from "../../lib/api";
 
 interface EditProfileModalProps {
   userId: number;
@@ -56,9 +57,8 @@ export default function EditProfileModal({
         body.password = password;
       }
 
-      const res = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const res = await apiFetch(`/api/users/${userId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 

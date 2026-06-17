@@ -1,9 +1,10 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LayoutDashboard, Users, Database, Settings, LogOut, Globe, CarFront, UserCircle, ShieldCheck, Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
 import LogoutConfirmModal from "../../../components/layout/LogoutConfirmModal";
+import { apiFetch } from "../../../lib/api";
 
 const menuItems = [
   { id: "dashboard",    label: "DASHBOARD",    icon: LayoutDashboard, href: "/super-admin/dashboard" },
@@ -18,6 +19,12 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   const [showConfirm, setShowConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [userInfo, setUserInfo] = useState<{ username: string } | null>(null);
+
+  useEffect(() => {
+    const username = typeof window !== "undefined" ? sessionStorage.getItem("app_username") : null;
+    if (username) setUserInfo({ username });
+  }, []);
 
   const handleLogout = () => { sessionStorage.clear(); router.push("/"); };
 
@@ -70,7 +77,13 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       <div className={`flex-1 ${collapsed ? "ml-0 md:ml-20" : "ml-0 md:ml-64"} flex flex-col transition-all duration-300`}>
         <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-bg">
           <button onClick={() => setSidebarOpen(true)} className="md:hidden w-10 h-10 bg-sidebar text-white rounded-lg flex items-center justify-center shadow-lg"><Menu className="w-5 h-5" /></button>
-          <div className="flex items-center gap-3 ml-auto"><div className="text-right"><p className="font-bold text-text-primary text-sm tracking-wide">SUPER ADMIN</p><p className="text-xs text-text-secondary">Terminal ABDYA</p></div><div className="w-10 h-10 rounded-full border-2 border-text-primary flex items-center justify-center"><UserCircle className="w-7 h-7 text-text-primary" /></div></div>
+          <div className="flex items-center gap-3 ml-auto">
+            <div className="text-right">
+              <p className="font-bold text-text-primary text-sm tracking-wide uppercase">{userInfo?.username || "SUPER ADMIN"}</p>
+              <p className="text-xs text-text-secondary">Super Admin</p>
+            </div>
+            <div className="w-10 h-10 rounded-full border-2 border-text-primary flex items-center justify-center"><UserCircle className="w-7 h-7 text-text-primary" /></div>
+          </div>
         </header>
         <main className="px-4 md:px-8 pb-8">{children}</main>
       </div>

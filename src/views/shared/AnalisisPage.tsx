@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import {
-  BarChart3, Users, Filter, ChevronDown, MapPin, ArrowUpDown, Calendar, Loader2,
+  BarChart3, Users, Filter, ChevronDown, MapPin, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Loader2,
 } from "lucide-react";
+import { apiFetch } from "../../lib/api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -63,7 +64,7 @@ export default function AnalisisPage() {
   // Fetch data dari API
   useEffect(() => {
     setIsLoading(true);
-    fetch("http://localhost:5000/api/pergerakan")
+    apiFetch("/api/pergerakan")
       .then((res) => res.json())
       .then((json) => {
         const rows: DataRow[] = (json.data || []).map((item: any, idx: number) => {
@@ -103,14 +104,46 @@ export default function AnalisisPage() {
     return (bulan === "Semua" || date.getMonth() === bulanIndex[bulan]) && date.getFullYear() === tahun;
   });
 
+  // Sorting
+  const [sortKey, setSortKey] = useState<string>("waktu");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  function handleSort(key: string) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+    setCurrentPage(1);
+  }
+
+  const sortedData = [...filteredData].sort((a, b) => {
+    let valA: string | number = "";
+    let valB: string | number = "";
+    switch (sortKey) {
+      case "waktu":    valA = parseTimestamp(a.timestamp).getTime(); valB = parseTimestamp(b.timestamp).getTime(); break;
+      case "tnkb":     valA = a.tnkb; valB = b.tnkb; break;
+      case "jenis":    valA = a.jenis; valB = b.jenis; break;
+      case "status":   valA = a.status; valB = b.status; break;
+      case "penumpang": valA = a.penumpang; valB = b.penumpang; break;
+      case "trayekAsal":  valA = a.trayekAsal; valB = b.trayekAsal; break;
+      case "trayekTujuan": valA = a.trayekTujuan; valB = b.trayekTujuan; break;
+      case "perusahaan": valA = a.perusahaan; valB = b.perusahaan; break;
+    }
+    if (valA < valB) return sortDir === "asc" ? -1 : 1;
+    if (valA > valB) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
-  const totalItems = filteredData.length;
+  const totalItems = sortedData.length;
   const totalPages = Math.ceil(totalItems / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
-  const paginatedData = filteredData.slice(startIndex, endIndex);
+  const paginatedData = sortedData.slice(startIndex, endIndex);
 
   // Reset page when filter changes
   useEffect(() => {
@@ -185,13 +218,6 @@ export default function AnalisisPage() {
         <h2 className="text-white font-bold text-xl tracking-wide">ANALISIS</h2>
       </div>
 
-      {isLoading && (
-        <div className="bg-white rounded-2xl p-8 shadow-md flex items-center justify-center gap-3">
-          <Loader2 className="w-6 h-6 text-sidebar animate-spin" />
-          <span className="text-text-secondary text-sm">Memuat data analisis...</span>
-        </div>
-      )}
-
       {/* Filter Bar */}
       <div className="bg-white rounded-2xl p-5 shadow-md flex items-center gap-4 flex-wrap">
         <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
@@ -229,6 +255,16 @@ export default function AnalisisPage() {
           </div>
         )}
       </div>
+
+      <div className="relative space-y-6">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/80 z-20 flex items-center justify-center rounded-2xl min-h-64">
+            <div className="flex flex-col items-center gap-3 bg-white px-8 py-6 rounded-2xl shadow-lg border border-gray-100">
+              <Loader2 className="w-8 h-8 text-sidebar animate-spin" />
+              <span className="text-sm font-medium text-text-secondary">Memuat data analisis...</span>
+            </div>
+          </div>
+        )}
 
       {/* Statistik */}
       <div className="bg-white rounded-2xl p-6 shadow-md flex items-center gap-5">
@@ -425,7 +461,18 @@ export default function AnalisisPage() {
               <tr className="border-b border-gray-200">
                 {headers.map((h) => (
                   <th key={h.key} className="text-left px-6 py-4 text-xs font-semibold text-text-secondary uppercase tracking-wider whitespace-nowrap">
-                    <div className="flex items-center gap-1"><span>{h.label}</span>{h.sortable && <ArrowUpDown className="w-3 h-3" />}</div>
+                    {h.sortable ? (
+                      <button onClick={() => handleSort(h.key)} className="flex items-center gap-1 hover:text-text-primary transition-colors group">
+                        <span className={sortKey === h.key ? "text-sidebar" : ""}>{h.label}</span>
+                        {sortKey === h.key
+                          ? sortDir === "asc"
+                            ? <ArrowUp className="w-3 h-3 text-sidebar" />
+                            : <ArrowDown className="w-3 h-3 text-sidebar" />
+                          : <ArrowUpDown className="w-3 h-3 opacity-40 group-hover:opacity-70" />}
+                      </button>
+                    ) : (
+                      <span>{h.label}</span>
+                    )}
                   </th>
                 ))}
               </tr>
@@ -580,6 +627,7 @@ export default function AnalisisPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

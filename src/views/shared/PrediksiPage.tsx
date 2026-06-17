@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Brain, CarFront, ArrowDownLeft, ArrowUpRight, Clock, Users, CalendarDays, Search, TrendingUp, Info,
 } from "lucide-react";
+import { apiFetch } from "../../lib/api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
@@ -65,7 +66,7 @@ export default function PrediksiPage() {
   // Cek konfigurasi prediksi
   const [prediksiEnabled, setPrediksiEnabled] = useState<boolean | null>(null);
   useEffect(() => {
-    fetch("http://localhost:5000/api/konfigurasi")
+    apiFetch("/api/konfigurasi")
       .then((res) => res.json())
       .then((json) => {
         const config = json.data || {};
@@ -108,9 +109,8 @@ export default function PrediksiPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/prediksi", {
+      const res = await apiFetch("/api/prediksi", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tanggal_mulai: tanggalMulai, tanggal_akhir: tanggalAkhir }),
       });
       const json = await res.json();
