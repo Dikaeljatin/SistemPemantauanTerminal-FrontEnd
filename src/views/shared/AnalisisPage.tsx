@@ -172,27 +172,17 @@ export default function AnalisisPage() {
 
   const totalPenumpang = filteredData.reduce((s, k) => s + k.penumpang, 0);
 
-  // Data chart — pergerakan per jam
-  const perJamCount: Record<string, { masuk: number; keluar: number }> = {};
+  // Data chart — TNKB keberangkatan & kedatangan terbanyak
+  const tnkbKeberangkatanCount: Record<string, { count: number; jenis: string }> = {};
+  const tnkbKedatanganCount: Record<string, { count: number; jenis: string }> = {};
   filteredData.forEach((k) => {
-    const hour = k.timestamp.split(" ")[1]?.split(":")[0] || "00";
-    const jam = `${hour}:00`;
-    if (!perJamCount[jam]) perJamCount[jam] = { masuk: 0, keluar: 0 };
-    if (k.status === "Kedatangan") perJamCount[jam].masuk++;
-    else perJamCount[jam].keluar++;
+    if (!k.tnkb) return;
+    const target = k.status === "Keberangkatan" ? tnkbKeberangkatanCount : tnkbKedatanganCount;
+    if (!target[k.tnkb]) target[k.tnkb] = { count: 0, jenis: k.jenis };
+    target[k.tnkb].count++;
   });
-  const perJamData = Object.entries(perJamCount).sort((a, b) => a[0].localeCompare(b[0])).map(([jam, val]) => ({ jam, masuk: val.masuk, keluar: val.keluar }));
-
-  // Data chart — penumpang per jam
-  const penumpangPerJam: Record<string, { datang: number; berangkat: number }> = {};
-  filteredData.forEach((k) => {
-    const hour = k.timestamp.split(" ")[1]?.split(":")[0] || "00";
-    const jam = `${hour}:00`;
-    if (!penumpangPerJam[jam]) penumpangPerJam[jam] = { datang: 0, berangkat: 0 };
-    if (k.status === "Kedatangan") penumpangPerJam[jam].datang += k.penumpang;
-    else penumpangPerJam[jam].berangkat += k.penumpang;
-  });
-  const penumpangPerJamData = Object.entries(penumpangPerJam).sort((a, b) => a[0].localeCompare(b[0])).map(([jam, val]) => ({ jam, datang: val.datang, berangkat: val.berangkat }));
+  const tnkbKeberangkatanData = Object.entries(tnkbKeberangkatanCount).sort((a, b) => b[1].count - a[1].count).slice(0, 5).map(([name, val], i) => ({ name, jenis: val.jenis, value: val.count, fill: barColors[i % barColors.length] }));
+  const tnkbKedatanganData = Object.entries(tnkbKedatanganCount).sort((a, b) => b[1].count - a[1].count).slice(0, 5).map(([name, val], i) => ({ name, jenis: val.jenis, value: val.count, fill: barColors[i % barColors.length] }));
 
   // Data chart — perusahaan terbanyak
   const perusahaanCount: Record<string, number> = {};
@@ -363,54 +353,40 @@ export default function AnalisisPage() {
         </div>
       </div>
 
-      {/* Grafik Baris 3: Pergerakan per Jam */}
-      <div className="bg-white rounded-2xl p-6 shadow-md">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-text-primary text-sm">Pergerakan Kendaraan per Jam</h3>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /><span className="text-xs text-text-secondary">Kedatangan</span></div>
-            <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-400 inline-block" /><span className="text-xs text-text-secondary">Keberangkatan</span></div>
-          </div>
+      {/* Grafik Baris 3: TNKB Keberangkatan & Kedatangan Terbanyak */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+          <h3 className="font-bold text-text-primary text-sm mb-4">Kendaraan Dengan TNKB Keberangkatan Terbanyak</h3>
+          {tnkbKeberangkatanData.length === 0 ? (
+            <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={tnkbKeberangkatanData} barSize={48}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+                <YAxis tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(value) => [`${value}`, "Jumlah keberangkatan"]} labelFormatter={(label, payload) => `${label}${payload?.[0]?.payload?.jenis ? ` (${payload[0].payload.jenis})` : ""}`} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>{tnkbKeberangkatanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
-        {perJamData.length === 0 ? (
-          <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
-        ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={perJamData} barSize={14}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-              <XAxis dataKey="jam" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} />
-              <Bar dataKey="masuk" fill="#60a5fa" radius={[4, 4, 0, 0]} name="Kedatangan" />
-              <Bar dataKey="keluar" fill="#4ade80" radius={[4, 4, 0, 0]} name="Keberangkatan" />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </div>
-
-      {/* Grafik Baris 4: Penumpang per Jam */}
-      <div className="bg-white rounded-2xl p-6 shadow-md">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-text-primary text-sm">Jumlah Penumpang per Jam</h3>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /><span className="text-xs text-text-secondary">Kedatangan</span></div>
-            <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block" /><span className="text-xs text-text-secondary">Keberangkatan</span></div>
-          </div>
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+          <h3 className="font-bold text-text-primary text-sm mb-4">Kendaraan Dengan TNKB Kedatangan Terbanyak</h3>
+          {tnkbKedatanganData.length === 0 ? (
+            <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={tnkbKedatanganData} barSize={48}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+                <YAxis tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(value) => [`${value}`, "Jumlah kedatangan"]} labelFormatter={(label, payload) => `${label}${payload?.[0]?.payload?.jenis ? ` (${payload[0].payload.jenis})` : ""}`} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>{tnkbKedatanganData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
-        {penumpangPerJamData.length === 0 ? (
-          <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
-        ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={penumpangPerJamData} barSize={14}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-              <XAxis dataKey="jam" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v, n) => [`${v} penumpang`, n === "datang" ? "Kedatangan" : "Keberangkatan"]} />
-              <Bar dataKey="datang" fill="#60a5fa" radius={[4, 4, 0, 0]} name="datang" />
-              <Bar dataKey="berangkat" fill="#fbbf24" radius={[4, 4, 0, 0]} name="berangkat" />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
       </div>
 
       {/* Grafik Baris 5: Perusahaan Terbanyak & Penumpang per Jenis */}
