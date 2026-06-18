@@ -40,7 +40,7 @@ export default function PetugasLayout({ children }: { children: React.ReactNode 
     }
   }, []);
 
-  const handleLogout = () => { sessionStorage.clear(); router.push("/"); };
+  const handleLogout = () => { sessionStorage.clear(); router.push("/login"); };
 
   return (
     <div className="flex min-h-screen bg-bg">
@@ -90,7 +90,7 @@ export default function PetugasLayout({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      <div className={`flex-1 ${collapsed ? "ml-0 md:ml-20" : "ml-0 md:ml-64"} flex flex-col transition-all duration-300`}>
+      <div className={`flex-1 min-w-0 ${collapsed ? "ml-0 md:ml-20" : "ml-0 md:ml-64"} flex flex-col transition-all duration-300`}>
         <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-bg">
           <button onClick={() => setSidebarOpen(true)} className="md:hidden w-10 h-10 bg-sidebar text-white rounded-lg flex items-center justify-center shadow-lg"><Menu className="w-5 h-5" /></button>
           <div className="flex items-center gap-3 ml-auto">

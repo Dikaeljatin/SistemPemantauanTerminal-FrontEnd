@@ -305,7 +305,7 @@ export default function KelolaDataPage() {
             </>
           )}
 
-          <div className="relative ml-auto">
+          <div className="relative ml-0 sm:ml-auto w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input type="text" placeholder="Cari TNKB, trayek, petugas..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 transition w-full sm:w-64" />
           </div>
@@ -430,7 +430,7 @@ export default function KelolaDataPage() {
               </button>
             ))}
           </div>
-          <div className="relative ml-auto">
+          <div className="relative ml-0 sm:ml-auto w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input type="text" placeholder="Cari user, deskripsi..." value={actSearchQuery} onChange={(e) => setActSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 transition w-full sm:w-56" />
           </div>

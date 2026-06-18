@@ -310,7 +310,7 @@ export default function KelolaUserPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-white rounded-2xl p-6 shadow-md">
             <User className="w-6 h-6 text-sidebar mb-3" />
             <p className="text-3xl font-bold text-text-primary">{users.length}</p>
@@ -336,8 +336,8 @@ export default function KelolaUserPage() {
         {/* Table card */}
         <div className="bg-white rounded-2xl p-6 shadow-md">
           {/* Toolbar */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3 bg-gray-100 rounded-lg px-4 py-2.5 w-80">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div className="flex items-center gap-3 bg-gray-100 rounded-lg px-4 py-2.5 w-full sm:w-80">
               <Search className="w-4 h-4 text-text-secondary flex-shrink-0" />
               <input
                 type="text"
@@ -349,15 +349,15 @@ export default function KelolaUserPage() {
             </div>
             <button
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-2 bg-sidebar hover:bg-sidebar-hover text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center justify-center gap-2 bg-sidebar hover:bg-sidebar-hover text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" />
               Tambah User
             </button>
           </div>
 
-          {/* Table */}
-          <div className="relative overflow-x-auto">
+          {/* Desktop Table */}
+          <div className="hidden md:block relative overflow-x-auto">
             {isLoading && (
               <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-lg">
                 <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl shadow-md border border-gray-100">
@@ -366,7 +366,7 @@ export default function KelolaUserPage() {
                 </div>
               </div>
             )}
-            <table className="w-full">
+            <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-text-secondary uppercase whitespace-nowrap">No</th>
@@ -429,6 +429,38 @@ export default function KelolaUserPage() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {filtered.length === 0 ? (
+              <div className="py-10 text-center text-sm text-text-secondary">Tidak ada user yang ditemukan.</div>
+            ) : (
+              filtered.map((u) => (
+                <div key={u.id} className="border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-start justify-between mb-2 gap-2">
+                    <div>
+                      <p className="font-bold text-text-primary text-base">{u.nama}</p>
+                      <p className="text-xs text-text-secondary mt-0.5">{u.email}</p>
+                    </div>
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${u.status === "Aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                      {u.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${roleBadge[u.role]}`}>{u.role}</span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setEditUser(u)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold transition-colors" title="Edit user">
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </button>
+                      <button onClick={() => setDeleteUser(u)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold transition-colors" title="Hapus user">
+                        <Trash2 className="w-3.5 h-3.5" /> Hapus
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

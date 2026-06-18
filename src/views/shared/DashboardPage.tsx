@@ -187,7 +187,7 @@ export default function DashboardPage() {
       {/* Charts */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Bar Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1 min-w-0">
           <h3 className="font-bold text-text-primary text-sm mb-4">Jenis Kendaraan Yang Paling Banyak Digunakan</h3>
           {jenisChartData.length === 0 ? (
             <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>

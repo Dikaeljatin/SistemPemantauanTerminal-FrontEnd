@@ -270,7 +270,7 @@ export default function AnalisisPage() {
 
       {/* Grafik Baris 1 */}
       <div className="flex flex-col lg:flex-row gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1 min-w-0">
           <h3 className="font-bold text-text-primary text-sm mb-4">Jenis Kendaraan Yang Paling Banyak Digunakan</h3>
           {jenisData.length === 0 ? (
             <div className="h-[260px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
@@ -313,7 +313,7 @@ export default function AnalisisPage() {
 
       {/* Grafik Baris 2 */}
       <div className="flex flex-col lg:flex-row gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-4"><MapPin className="w-4 h-4 text-sidebar" /><h3 className="font-bold text-text-primary text-sm">Trayek Asal Yang Paling Banyak</h3></div>
           {trayekAsalData.length === 0 ? (
             <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
@@ -332,7 +332,7 @@ export default function AnalisisPage() {
             </>
           )}
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-4"><MapPin className="w-4 h-4 text-sidebar" /><h3 className="font-bold text-text-primary text-sm">Trayek Tujuan Yang Paling Banyak</h3></div>
           {trayekTujuanData.length === 0 ? (
             <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
@@ -391,7 +391,7 @@ export default function AnalisisPage() {
 
       {/* Grafik Baris 5: Perusahaan Terbanyak & Penumpang per Jenis */}
       <div className="flex flex-col lg:flex-row gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1 min-w-0">
           <h3 className="font-bold text-text-primary text-sm mb-4">Perusahaan dengan Kendaraan Terbanyak</h3>
           {perusahaanData.length === 0 ? (
             <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
@@ -407,7 +407,7 @@ export default function AnalisisPage() {
             </ResponsiveContainer>
           )}
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1 min-w-0">
           <h3 className="font-bold text-text-primary text-sm mb-4">Rata-rata Penumpang per Jenis Kendaraan</h3>
           {penumpangPerJenisData.length === 0 ? (
             <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>

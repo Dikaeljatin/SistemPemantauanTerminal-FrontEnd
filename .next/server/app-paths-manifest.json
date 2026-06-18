@@ -1,6 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(dashboard)/petugas/dashboard/page": "app/(dashboard)/petugas/dashboard/page.js",
-  "/(dashboard)/petugas/analisis/page": "app/(dashboard)/petugas/analisis/page.js"
-}

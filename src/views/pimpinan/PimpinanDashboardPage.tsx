@@ -310,7 +310,7 @@ export default function PimpinanDashboardPage() {
       {/* Charts */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Bar Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1 min-w-0">
           <h3 className="font-bold text-text-primary text-sm mb-4">Kendaraan per Jenis</h3>
           {barData.length === 0 ? (
             <div className="h-48 flex items-center justify-center text-text-secondary text-sm">
@@ -374,7 +374,7 @@ export default function PimpinanDashboardPage() {
 
       {/* Grafik Baris 2: Trayek Asal & Tujuan */}
       <div className="flex flex-col lg:flex-row gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1 min-w-0">
           <h3 className="font-bold text-text-primary text-sm mb-4">Trayek Asal Terbanyak</h3>
           {trayekAsalData.length === 0 ? (
             <div className="h-48 flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
@@ -395,7 +395,7 @@ export default function PimpinanDashboardPage() {
             </>
           )}
         </div>
-        <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
+        <div className="bg-white rounded-2xl p-6 shadow-md flex-1 min-w-0">
           <h3 className="font-bold text-text-primary text-sm mb-4">Trayek Tujuan Terbanyak</h3>
           {trayekTujuanData.length === 0 ? (
             <div className="h-48 flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
