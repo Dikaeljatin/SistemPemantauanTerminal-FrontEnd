@@ -322,7 +322,7 @@ export default function KelolaDataPage() {
               </div>
             </div>
           )}
-          <div className="overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[1500px]">
             <thead>
               <tr className="border-b border-gray-200">
@@ -374,6 +374,57 @@ export default function KelolaDataPage() {
               )}
             </tbody>
           </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {paginatedPergerakan.length === 0 && !isLoadingPergerakan ? (
+              <div className="py-10 text-center text-sm text-text-secondary">Tidak ada data.</div>
+            ) : (
+              paginatedPergerakan.map((k, idx) => (
+                <div key={k.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-text-secondary font-semibold">#{startIndex + idx + 1}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${k.status === "Kedatangan" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>{k.status}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-baseline gap-2">
+                      <p className="font-bold text-text-primary text-base">{k.tnkb}</p>
+                      <span className="text-xs text-text-secondary">{k.jenis}</span>
+                    </div>
+                    <p className="text-xs text-text-secondary">{k.timestamp}</p>
+                    <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">P. Kedatangan</p>
+                        <p className="text-sm text-text-primary">{k.penumpangDatang > 0 ? k.penumpangDatang : "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">P. Keberangkatan</p>
+                        <p className="text-sm text-text-primary">{k.penumpangBerangkat > 0 ? k.penumpangBerangkat : "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Asal</p>
+                        <p className="text-sm text-text-primary">{k.trayekAsal || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Tujuan</p>
+                        <p className="text-sm text-text-primary">{k.trayekTujuan || "-"}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-[10px] text-text-secondary uppercase tracking-wide">Perusahaan</p>
+                        <p className="text-sm text-text-primary">{k.perusahaan || "-"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-100 text-[10px] text-text-secondary">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full font-medium ${k.createdBy !== "-" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-500"}`}>Input: {k.createdBy}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full font-medium ${k.updatedBy !== "-" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}>Edit: {k.updatedBy}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

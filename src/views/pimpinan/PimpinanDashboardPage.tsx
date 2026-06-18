@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "../../lib/api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, PieChart, Pie, Legend,
+  ResponsiveContainer, Cell, PieChart, Pie, Legend, LabelList,
 } from "recharts";
 
 // ─── Interface ────────────────────────────────────────────────────────────────
@@ -381,12 +381,15 @@ export default function PimpinanDashboardPage() {
           ) : (
             <>
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={trayekAsalData} barSize={32}>
+              <BarChart data={trayekAsalData} barSize={32} margin={{ top: 24 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v) => [`${v}`, "Jumlah"]} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>{trayekAsalData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="value" position="top" style={{ fontSize: 11, fill: "#374151", fontWeight: 600 }} />
+                  {trayekAsalData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-3 bg-gray-50 rounded-lg p-3">
@@ -407,7 +410,10 @@ export default function PimpinanDashboardPage() {
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v) => [`${v}`, "Jumlah"]} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>{trayekTujuanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="value" position="top" style={{ fontSize: 11, fill: "#374151", fontWeight: 600 }} />
+                  {trayekTujuanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-3 bg-gray-50 rounded-lg p-3">

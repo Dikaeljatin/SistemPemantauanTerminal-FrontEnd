@@ -221,7 +221,8 @@ export default function LandingPage({ onGoToLogin }: LandingPageProps) {
         </div>
 
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[800px]">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
@@ -249,6 +250,44 @@ export default function LandingPage({ onGoToLogin }: LandingPageProps) {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3 p-4">
+            {tableData.length === 0 ? (
+              <div className="py-10 text-center text-sm text-text-secondary">Belum ada data</div>
+            ) : (
+              tableData.map((k, idx) => (
+                <div key={k.id} className="border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs text-text-secondary font-semibold">#{idx + 1}</span>
+                      <p className="font-bold text-text-primary text-base">{k.tnkb}</p>
+                    </div>
+                    <span className="text-xs text-text-secondary">{k.jenis}</span>
+                  </div>
+                  <p className="text-xs text-text-secondary mb-2">{k.timestamp}</p>
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Asal</p>
+                      <p className="text-sm text-text-primary">{k.trayekAsal || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Trayek Tujuan</p>
+                      <p className="text-sm text-text-primary">{k.trayekTujuan || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Penumpang</p>
+                      <p className="text-sm text-text-primary">{k.penumpang || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-text-secondary uppercase tracking-wide">Perusahaan</p>
+                      <p className="text-sm text-text-primary">{k.perusahaan || "-"}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
