@@ -534,12 +534,12 @@ export default function PetugasDataKendaraanPage() {
       )}
 
       {/* Header card */}
-      <div className="bg-sidebar rounded-2xl px-8 py-5 flex items-center justify-between shadow-lg">
+      <div className="bg-sidebar rounded-2xl px-5 sm:px-8 py-5 flex items-center justify-between gap-4 flex-wrap shadow-lg">
         <div className="flex items-center gap-4">
           <CarFront className="w-8 h-8 text-white" />
           <h2 className="text-white font-bold text-xl tracking-wide">DATA KENDARAAN</h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {importEnabled && (
             <button
               onClick={() => setShowImportModal(true)}
@@ -599,7 +599,7 @@ export default function PetugasDataKendaraanPage() {
 
           {/* Filter Harian */}
           {filterMode === "harian" && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <label className="text-sm text-text-secondary font-medium">Pilih Tanggal:</label>
               <input
                 type="date"
@@ -607,7 +607,7 @@ export default function PetugasDataKendaraanPage() {
                 onChange={(e) => setTanggal(e.target.value)}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-transparent transition-all cursor-pointer"
               />
-              <span className="text-sm text-text-secondary">
+              <span className="text-sm text-text-secondary w-full sm:w-auto">
                 Menampilkan data tanggal{" "}
                 <span className="font-semibold text-text-primary">{formatTanggal(tanggal)}</span>
               </span>
@@ -616,7 +616,7 @@ export default function PetugasDataKendaraanPage() {
 
           {/* Filter Bulanan */}
           {filterMode === "bulanan" && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <label className="text-sm text-text-secondary font-medium">Pilih Bulan:</label>
               <div className="relative">
                 <button
@@ -652,7 +652,7 @@ export default function PetugasDataKendaraanPage() {
                 onChange={(e) => setTahun(parseInt(e.target.value))}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-20"
               />
-              <span className="text-sm text-text-secondary">
+              <span className="text-sm text-text-secondary w-full sm:w-auto">
                 Menampilkan data bulan{" "}
                 <span className="font-semibold text-text-primary">{bulan} {tahun}</span>
               </span>
@@ -870,7 +870,7 @@ export default function PetugasDataKendaraanPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap justify-center sm:justify-end">
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={isLoading || currentPage === 1}

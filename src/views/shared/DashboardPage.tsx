@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "../../lib/api";
 import { CarFront, CalendarDays, Calendar, Filter, ChevronDown, ArrowUpDown, Loader2 } from "lucide-react";
 import {
@@ -12,21 +12,42 @@ const bulanList = [
   "Semua","Januari","Februari","Maret","April","Mei","Juni",
   "Juli","Agustus","September","Oktober","November","Desember",
 ];
-const bulanIndex: Record<string, number> = {
-  Januari:0,Februari:1,Maret:2,April:3,Mei:4,Juni:5,
-  Juli:6,Agustus:7,September:8,Oktober:9,November:10,Desember:11,
-};
 
 interface KendaraanRow {
   id: number; timestamp: string; status: string; tnkb: string; jenis: string;
   penumpangDatang: number; penumpangBerangkat: number; trayekAsal: string; trayekTujuan: string; perusahaan: string;
 }
 
-function parseTimestamp(ts: string): Date {
-  const [datePart, timePart] = ts.split(" ");
-  const [dd, mm, yyyy] = datePart.split("/").map(Number);
-  const [hh, min] = (timePart ?? "00:00").split(":").map(Number);
-  return new Date(yyyy, mm - 1, dd, hh, min);
+interface ChartItem { name: string; value: number; }
+interface Summary {
+  total: number;
+  totalKedatangan: number;
+  totalKeberangkatan: number;
+  byJenis: ChartItem[];
+}
+const emptySummary: Summary = { total: 0, totalKedatangan: 0, totalKeberangkatan: 0, byJenis: [] };
+
+function mapRow(item: any, idx: number): KendaraanRow {
+  let ts = "";
+  if (item.timestamp) {
+    const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
+    const [datePart, timePart] = raw.split(" ");
+    const [yyyy, mm, dd] = datePart.split("-");
+    const time = timePart ? timePart.slice(0, 5) : "00:00";
+    ts = `${dd}/${mm}/${yyyy} ${time}`;
+  }
+  return {
+    id: item.pergerakan_id ?? idx,
+    timestamp: ts,
+    status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
+    tnkb: item.tnkb || "",
+    jenis: item.jenis_kendaraan || "",
+    penumpangDatang: item.status_pergerakan === "kedatangan" ? item.jumlah_penumpang : 0,
+    penumpangBerangkat: item.status_pergerakan === "keberangkatan" ? item.jumlah_penumpang : 0,
+    trayekAsal: item.trayek_asal || "",
+    trayekTujuan: item.trayek_tujuan || "",
+    perusahaan: item.nama_perusahaan || "",
+  };
 }
 
 const barColors = ["#60a5fa","#4ade80","#fbbf24","#f87171","#a78bfa","#34d399"];
@@ -34,8 +55,6 @@ type FilterMode = "harian" | "bulanan";
 type FilterStatus = "semua" | "Kedatangan" | "Keberangkatan";
 
 export default function DashboardPage() {
-  const [allData, setAllData] = useState<KendaraanRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [filterMode, setFilterMode] = useState<FilterMode>("bulanan");
   const [bulan, setBulan] = useState("Januari");
   const [tahun, setTahun] = useState(new Date().getFullYear());
@@ -43,75 +62,76 @@ export default function DashboardPage() {
   const [tanggal, setTanggal] = useState(new Date().toISOString().split("T")[0]);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("semua");
 
-  useEffect(() => {
-    setIsLoading(true);
-    apiFetch("/api/pergerakan")
-      .then((res) => res.json())
-      .then((json) => {
-        const rows: KendaraanRow[] = (json.data || []).map((item: any, idx: number) => {
-          let ts = "";
-          if (item.timestamp) {
-            const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
-            const [datePart, timePart] = raw.split(" ");
-            const [yyyy, mm, dd] = datePart.split("-");
-            const time = timePart ? timePart.slice(0, 5) : "00:00";
-            ts = `${dd}/${mm}/${yyyy} ${time}`;
-          }
-          return {
-            id: item.pergerakan_id ?? idx,
-            timestamp: ts,
-            status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
-            tnkb: item.tnkb || "",
-            jenis: item.jenis_kendaraan || "",
-            penumpangDatang: item.status_pergerakan === "kedatangan" ? item.jumlah_penumpang : 0,
-            penumpangBerangkat: item.status_pergerakan === "keberangkatan" ? item.jumlah_penumpang : 0,
-            trayekAsal: item.trayek_asal || "",
-            trayekTujuan: item.trayek_tujuan || "",
-            perusahaan: item.nama_perusahaan || "",
-          };
-        });
-        setAllData(rows);
-      })
-      .catch((err) => console.error("Gagal fetch:", err))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  // Filter data
-  const filteredData = allData.filter((k) => {
-    const date = parseTimestamp(k.timestamp);
+  // Bangun query string filter yang dipakai bersama tabel & summary
+  const buildFilterParams = useCallback(() => {
+    const params = new URLSearchParams();
+    params.set("filter_mode", filterMode);
     if (filterMode === "harian") {
-      const [yyyy, mm, dd] = tanggal.split("-").map(Number);
-      if (!(date.getFullYear() === yyyy && date.getMonth() === mm - 1 && date.getDate() === dd)) return false;
+      params.set("tanggal", tanggal);
     } else {
-      if (!(bulan === "Semua" || date.getMonth() === bulanIndex[bulan]) || date.getFullYear() !== tahun) return false;
+      params.set("bulan", String(bulanList.indexOf(bulan)));
+      params.set("tahun", String(tahun));
     }
-    return filterStatus === "semua" || k.status === filterStatus;
-  });
+    if (filterStatus !== "semua") params.set("status", filterStatus.toLowerCase());
+    return params;
+  }, [filterMode, bulan, tahun, tanggal, filterStatus]);
 
-  // Pagination
+  // Ringkasan grafik — diagregasi di server, tidak perlu fetch semua baris
+  const [summary, setSummary] = useState<Summary>(emptySummary);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
+
+  useEffect(() => {
+    setIsLoadingSummary(true);
+    const params = buildFilterParams();
+    apiFetch(`/api/pergerakan/summary?${params.toString()}`)
+      .then((res) => res.json())
+      .then((json) => setSummary(json))
+      .catch((err) => console.error("Gagal fetch summary:", err))
+      .finally(() => setIsLoadingSummary(false));
+  }, [buildFilterParams]);
+
+  // Tabel — server-side pagination
+  const [tableData, setTableData] = useState<KendaraanRow[]>([]);
+  const [isLoadingTable, setIsLoadingTable] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
-  const totalItems = filteredData.length;
-  const totalPages = Math.ceil(totalItems / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedData = filteredData.slice(startIndex, endIndex);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [serverTotalPages, setServerTotalPages] = useState(1);
+
+  const fetchTable = useCallback(() => {
+    setIsLoadingTable(true);
+    const params = buildFilterParams();
+    params.set("page", String(currentPage));
+    params.set("limit", String(rowsPerPage));
+    apiFetch(`/api/pergerakan?${params.toString()}`)
+      .then((res) => res.json())
+      .then((json) => {
+        setTableData((json.data || []).map(mapRow));
+        setServerTotal(json.total ?? 0);
+        setServerTotalPages(json.totalPages ?? 1);
+      })
+      .catch((err) => console.error("Gagal fetch:", err))
+      .finally(() => setIsLoadingTable(false));
+  }, [buildFilterParams, currentPage, rowsPerPage]);
+
+  useEffect(() => { fetchTable(); }, [fetchTable]);
 
   // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filterMode, bulan, tahun, tanggal, filterStatus]);
 
-  // Chart data
-  const jenisCount: Record<string, number> = {};
-  filteredData.forEach((k) => { jenisCount[k.jenis] = (jenisCount[k.jenis] || 0) + 1; });
-  const jenisChartData = Object.entries(jenisCount).map(([name, value], i) => ({ name, value, fill: barColors[i % barColors.length] }));
+  const totalItems = serverTotal;
+  const totalPages = serverTotalPages;
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedData = tableData;
 
-  const kedatanganCount = filteredData.filter((k) => k.status === "Kedatangan").length;
-  const keberangkatanCount = filteredData.filter((k) => k.status === "Keberangkatan").length;
+  // Chart data — langsung dari hasil agregat server
+  const jenisChartData = summary.byJenis.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
   const pieChartData = [
-    { name: "Kedatangan", value: kedatanganCount, color: "#60a5fa" },
-    { name: "Keberangkatan", value: keberangkatanCount, color: "#4ade80" },
+    { name: "Kedatangan", value: summary.totalKedatangan, color: "#60a5fa" },
+    { name: "Keberangkatan", value: summary.totalKeberangkatan, color: "#4ade80" },
   ];
 
   return (
@@ -159,12 +179,12 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <span className="text-xs text-text-secondary ml-auto">{filteredData.length} data</span>
+        <span className="text-xs text-text-secondary ml-auto">{summary.total} data</span>
       </div>
 
       {/* Konten utama dengan overlay loading */}
       <div className="relative space-y-6">
-      {isLoading && (
+      {isLoadingSummary && (
         <div className="absolute inset-0 bg-white/80 z-20 flex items-center justify-center rounded-2xl min-h-64">
           <div className="flex flex-col items-center gap-3 bg-white px-8 py-6 rounded-2xl shadow-lg border border-gray-100">
             <Loader2 className="w-8 h-8 text-sidebar animate-spin" />
@@ -179,7 +199,7 @@ export default function DashboardPage() {
           <h2 className="text-white font-bold text-lg tracking-wide">TOTAL KENDARAAN</h2>
           <div className="flex items-center gap-3 mt-1">
             <CarFront className="w-8 h-8 text-white" />
-            <span className="text-white text-4xl font-bold">{filteredData.length}</span>
+            <span className="text-white text-4xl font-bold">{summary.total}</span>
           </div>
         </div>
       </div>
@@ -212,7 +232,7 @@ export default function DashboardPage() {
         {/* Pie Chart */}
         <div className="bg-white rounded-2xl p-6 shadow-md w-full lg:w-[380px]">
           <div className="flex items-center gap-2 mb-4"><div className="w-1 h-4 bg-sidebar rounded-full" /><h3 className="font-bold text-text-primary text-sm">Kedatangan vs Keberangkatan</h3></div>
-          {filteredData.length === 0 ? (
+          {summary.total === 0 ? (
             <div className="h-[220px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
           ) : (
             <>
@@ -232,6 +252,15 @@ export default function DashboardPage() {
 
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <div className="relative">
+        {isLoadingTable && (
+          <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-lg min-h-[120px]">
+            <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl shadow-md border border-gray-100">
+              <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+              <span className="text-sm font-medium text-text-secondary">Memuat data...</span>
+            </div>
+          </div>
+        )}
         {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[1000px]">
@@ -309,6 +338,7 @@ export default function DashboardPage() {
             ))
           )}
         </div>
+        </div>
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
@@ -331,7 +361,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap justify-center sm:justify-end">
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}

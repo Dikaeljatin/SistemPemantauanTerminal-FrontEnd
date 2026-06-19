@@ -465,17 +465,6 @@ function FormView({
             placeholder="Pilih jenis kendaraan"
           />
 
-          {/* Trayek Asal */}
-          <Field label="Trayek Asal" error={errors.trayekAsal}>
-            <input
-              type="text"
-              value={form.trayekAsal}
-              onChange={(e) => set("trayekAsal", e.target.value)}
-              placeholder="Contoh: Banda Aceh"
-              className={inputCls(!!errors.trayekAsal)}
-            />
-          </Field>
-
           {/* TNKB — combobox berdasarkan jenis kendaraan */}
           <Field label="TNKB" error={errors.tnkb}>
             <div className="relative">
@@ -526,6 +515,17 @@ function FormView({
                 );
               })()}
             </div>
+          </Field>
+
+          {/* Trayek Asal */}
+          <Field label="Trayek Asal" error={errors.trayekAsal}>
+            <input
+              type="text"
+              value={form.trayekAsal}
+              onChange={(e) => set("trayekAsal", e.target.value)}
+              placeholder="Contoh: Banda Aceh"
+              className={inputCls(!!errors.trayekAsal)}
+            />
           </Field>
 
           {/* Trayek Tujuan */}

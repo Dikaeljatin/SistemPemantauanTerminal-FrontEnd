@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   BarChart3, Users, Filter, ChevronDown, MapPin, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Loader2,
 } from "lucide-react";
@@ -14,27 +14,61 @@ const bulanList = [
   "Semua","Januari","Februari","Maret","April","Mei","Juni",
   "Juli","Agustus","September","Oktober","November","Desember",
 ];
-const bulanIndex: Record<string, number> = {
-  Januari:0,Februari:1,Maret:2,April:3,Mei:4,Juni:5,
-  Juli:6,Agustus:7,September:8,Oktober:9,November:10,Desember:11,
-};
 
 interface DataRow {
   id: number; timestamp: string; status: string; tnkb: string; jenis: string;
   penumpang: number; trayekAsal: string; trayekTujuan: string; perusahaan: string;
 }
 
-function parseTimestamp(ts: string): Date {
-  const [datePart, timePart] = ts.split(" ");
-  const [dd, mm, yyyy] = datePart.split("/").map(Number);
-  const [hh, min] = (timePart ?? "00:00").split(":").map(Number);
-  return new Date(yyyy, mm - 1, dd, hh, min);
+interface ChartItem { name: string; value: number; }
+interface TnkbItem { name: string; jenis: string; value: number; }
+
+interface Summary {
+  total: number;
+  totalKedatangan: number;
+  totalKeberangkatan: number;
+  totalPenumpangDatang: number;
+  totalPenumpangBerangkat: number;
+  byJenis: ChartItem[];
+  byTrayekAsal: ChartItem[];
+  byTrayekTujuan: ChartItem[];
+  byPerusahaan: ChartItem[];
+  byTnkbKeberangkatan: TnkbItem[];
+  byTnkbKedatangan: TnkbItem[];
+  penumpangPerJenis: ChartItem[];
+}
+
+const emptySummary: Summary = {
+  total: 0, totalKedatangan: 0, totalKeberangkatan: 0, totalPenumpangDatang: 0, totalPenumpangBerangkat: 0,
+  byJenis: [], byTrayekAsal: [], byTrayekTujuan: [], byPerusahaan: [], byTnkbKeberangkatan: [], byTnkbKedatangan: [], penumpangPerJenis: [],
+};
+
+function mapRow(item: any, idx: number): DataRow {
+  let ts = "";
+  if (item.timestamp) {
+    const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
+    const [datePart, timePart] = raw.split(" ");
+    const [yyyy, mm, dd] = datePart.split("-");
+    const time = timePart ? timePart.slice(0, 5) : "00:00";
+    ts = `${dd}/${mm}/${yyyy} ${time}`;
+  }
+  return {
+    id: item.pergerakan_id ?? idx,
+    timestamp: ts,
+    status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
+    tnkb: item.tnkb || "",
+    jenis: item.jenis_kendaraan || "",
+    penumpang: item.jumlah_penumpang || 0,
+    trayekAsal: item.trayek_asal || "",
+    trayekTujuan: item.trayek_tujuan || "",
+    perusahaan: item.nama_perusahaan || "",
+  };
 }
 
 function formatTanggal(dateStr: string) {
   if (!dateStr) return "";
   const [year, month, day] = dateStr.split("-");
-  const bulanNama = bulanList[parseInt(month, 10) - 1];
+  const bulanNama = bulanList[parseInt(month, 10)];
   return `${parseInt(day, 10)} ${bulanNama} ${year}`;
 }
 
@@ -52,8 +86,6 @@ const headers = [
 const barColors = ["#60a5fa","#4ade80","#fbbf24","#f87171","#a78bfa","#34d399"];
 
 export default function AnalisisPage() {
-  const [allData, setAllData] = useState<DataRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [filterMode, setFilterMode] = useState<"bulanan" | "harian">("bulanan");
   const [bulan, setBulan] = useState("Januari");
   const [tahun, setTahun] = useState(new Date().getFullYear());
@@ -61,50 +93,34 @@ export default function AnalisisPage() {
   const today = new Date().toISOString().split("T")[0];
   const [tanggal, setTanggal] = useState(today);
 
-  // Fetch data dari API
-  useEffect(() => {
-    setIsLoading(true);
-    apiFetch("/api/pergerakan")
-      .then((res) => res.json())
-      .then((json) => {
-        const rows: DataRow[] = (json.data || []).map((item: any, idx: number) => {
-          let ts = "";
-          if (item.timestamp) {
-            const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
-            const [datePart, timePart] = raw.split(" ");
-            const [yyyy, mm, dd] = datePart.split("-");
-            const time = timePart ? timePart.slice(0, 5) : "00:00";
-            ts = `${dd}/${mm}/${yyyy} ${time}`;
-          }
-          return {
-            id: item.pergerakan_id ?? idx,
-            timestamp: ts,
-            status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
-            tnkb: item.tnkb || "",
-            jenis: item.jenis_kendaraan || "",
-            penumpang: item.jumlah_penumpang || 0,
-            trayekAsal: item.trayek_asal || "",
-            trayekTujuan: item.trayek_tujuan || "",
-            perusahaan: item.nama_perusahaan || "",
-          };
-        });
-        setAllData(rows);
-      })
-      .catch((err) => console.error("Gagal fetch:", err))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  // Filter berdasarkan periode
-  const filteredData = allData.filter((k) => {
-    const date = parseTimestamp(k.timestamp);
+  // Helper: bangun query string filter periode yang dipakai bersama tabel & summary
+  const buildFilterParams = useCallback(() => {
+    const params = new URLSearchParams();
+    params.set("filter_mode", filterMode);
     if (filterMode === "harian") {
-      const [yyyy, mm, dd] = tanggal.split("-").map(Number);
-      return date.getFullYear() === yyyy && date.getMonth() === mm - 1 && date.getDate() === dd;
+      params.set("tanggal", tanggal);
+    } else {
+      params.set("bulan", String(bulanList.indexOf(bulan)));
+      params.set("tahun", String(tahun));
     }
-    return (bulan === "Semua" || date.getMonth() === bulanIndex[bulan]) && date.getFullYear() === tahun;
-  });
+    return params;
+  }, [filterMode, bulan, tahun, tanggal]);
 
-  // Sorting
+  // Ringkasan grafik — diagregasi di server (SQL GROUP BY), tidak perlu fetch semua baris
+  const [summary, setSummary] = useState<Summary>(emptySummary);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
+
+  useEffect(() => {
+    setIsLoadingSummary(true);
+    const params = buildFilterParams();
+    apiFetch(`/api/pergerakan/summary?${params.toString()}`)
+      .then((res) => res.json())
+      .then((json) => setSummary(json))
+      .catch((err) => console.error("Gagal fetch summary:", err))
+      .finally(() => setIsLoadingSummary(false));
+  }, [buildFilterParams]);
+
+  // Sorting (server-side)
   const [sortKey, setSortKey] = useState<string>("waktu");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -118,87 +134,58 @@ export default function AnalisisPage() {
     setCurrentPage(1);
   }
 
-  const sortedData = [...filteredData].sort((a, b) => {
-    let valA: string | number = "";
-    let valB: string | number = "";
-    switch (sortKey) {
-      case "waktu":    valA = parseTimestamp(a.timestamp).getTime(); valB = parseTimestamp(b.timestamp).getTime(); break;
-      case "tnkb":     valA = a.tnkb; valB = b.tnkb; break;
-      case "jenis":    valA = a.jenis; valB = b.jenis; break;
-      case "status":   valA = a.status; valB = b.status; break;
-      case "penumpang": valA = a.penumpang; valB = b.penumpang; break;
-      case "trayekAsal":  valA = a.trayekAsal; valB = b.trayekAsal; break;
-      case "trayekTujuan": valA = a.trayekTujuan; valB = b.trayekTujuan; break;
-      case "perusahaan": valA = a.perusahaan; valB = b.perusahaan; break;
-    }
-    if (valA < valB) return sortDir === "asc" ? -1 : 1;
-    if (valA > valB) return sortDir === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  // Pagination
+  // Tabel — server-side pagination + sort
+  const [tableData, setTableData] = useState<DataRow[]>([]);
+  const [isLoadingTable, setIsLoadingTable] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
-  const totalItems = sortedData.length;
-  const totalPages = Math.ceil(totalItems / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedData = sortedData.slice(startIndex, endIndex);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [serverTotalPages, setServerTotalPages] = useState(1);
 
-  // Reset page when filter changes
+  const fetchTable = useCallback(() => {
+    setIsLoadingTable(true);
+    const params = buildFilterParams();
+    params.set("page", String(currentPage));
+    params.set("limit", String(rowsPerPage));
+    params.set("sort_key", sortKey);
+    params.set("sort_dir", sortDir);
+    apiFetch(`/api/pergerakan?${params.toString()}`)
+      .then((res) => res.json())
+      .then((json) => {
+        setTableData((json.data || []).map(mapRow));
+        setServerTotal(json.total ?? 0);
+        setServerTotalPages(json.totalPages ?? 1);
+      })
+      .catch((err) => console.error("Gagal fetch tabel:", err))
+      .finally(() => setIsLoadingTable(false));
+  }, [buildFilterParams, currentPage, rowsPerPage, sortKey, sortDir]);
+
+  useEffect(() => { fetchTable(); }, [fetchTable]);
+
+  // Reset ke halaman 1 saat filter/sort berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterMode, bulan, tahun, tanggal]);
+  }, [filterMode, bulan, tahun, tanggal, sortKey, sortDir]);
 
-  // Generate chart data
-  const jenisCount: Record<string, number> = {};
-  filteredData.forEach((k) => { jenisCount[k.jenis] = (jenisCount[k.jenis] || 0) + 1; });
-  const jenisData = Object.entries(jenisCount).map(([name, value], i) => ({ name, value, fill: barColors[i % barColors.length] }));
+  const totalItems = serverTotal;
+  const totalPages = serverTotalPages;
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedData = tableData;
 
-  const kedatanganCount = filteredData.filter((k) => k.status === "Kedatangan").length;
-  const keberangkatanCount = filteredData.filter((k) => k.status === "Keberangkatan").length;
+  // Chart data — langsung dari hasil agregat server
+  const jenisData = summary.byJenis.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
   const statusData = [
-    { name: "Kedatangan", value: kedatanganCount, color: "#60a5fa" },
-    { name: "Keberangkatan", value: keberangkatanCount, color: "#4ade80" },
+    { name: "Kedatangan", value: summary.totalKedatangan, color: "#60a5fa" },
+    { name: "Keberangkatan", value: summary.totalKeberangkatan, color: "#4ade80" },
   ];
-
-  const trayekAsalCount: Record<string, number> = {};
-  filteredData.forEach((k) => { if (k.trayekAsal) trayekAsalCount[k.trayekAsal] = (trayekAsalCount[k.trayekAsal] || 0) + 1; });
-  const trayekAsalData = Object.entries(trayekAsalCount).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value], i) => ({ name, value, fill: barColors[i % barColors.length] }));
-
-  const trayekTujuanCount: Record<string, number> = {};
-  filteredData.forEach((k) => { if (k.trayekTujuan) trayekTujuanCount[k.trayekTujuan] = (trayekTujuanCount[k.trayekTujuan] || 0) + 1; });
-  const trayekTujuanData = Object.entries(trayekTujuanCount).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value], i) => ({ name, value, fill: barColors[i % barColors.length] }));
-
-  const totalPenumpang = filteredData.reduce((s, k) => s + k.penumpang, 0);
-
-  // Data chart — TNKB keberangkatan & kedatangan terbanyak
-  const tnkbKeberangkatanCount: Record<string, { count: number; jenis: string }> = {};
-  const tnkbKedatanganCount: Record<string, { count: number; jenis: string }> = {};
-  filteredData.forEach((k) => {
-    if (!k.tnkb) return;
-    const target = k.status === "Keberangkatan" ? tnkbKeberangkatanCount : tnkbKedatanganCount;
-    if (!target[k.tnkb]) target[k.tnkb] = { count: 0, jenis: k.jenis };
-    target[k.tnkb].count++;
-  });
-  const tnkbKeberangkatanData = Object.entries(tnkbKeberangkatanCount).sort((a, b) => b[1].count - a[1].count).slice(0, 5).map(([name, val], i) => ({ name, jenis: val.jenis, value: val.count, fill: barColors[i % barColors.length] }));
-  const tnkbKedatanganData = Object.entries(tnkbKedatanganCount).sort((a, b) => b[1].count - a[1].count).slice(0, 5).map(([name, val], i) => ({ name, jenis: val.jenis, value: val.count, fill: barColors[i % barColors.length] }));
-
-  // Data chart — perusahaan terbanyak
-  const perusahaanCount: Record<string, number> = {};
-  filteredData.forEach((k) => { if (k.perusahaan && k.perusahaan !== "-") perusahaanCount[k.perusahaan] = (perusahaanCount[k.perusahaan] || 0) + 1; });
-  const perusahaanData = Object.entries(perusahaanCount).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value], i) => ({ name, value, fill: barColors[i % barColors.length] }));
-
-  // Data chart — rata-rata penumpang per jenis kendaraan
-  const penumpangPerJenis: Record<string, { total: number; count: number }> = {};
-  filteredData.forEach((k) => {
-    if (!penumpangPerJenis[k.jenis]) penumpangPerJenis[k.jenis] = { total: 0, count: 0 };
-    penumpangPerJenis[k.jenis].total += k.penumpang;
-    penumpangPerJenis[k.jenis].count++;
-  });
-  const penumpangPerJenisData = Object.entries(penumpangPerJenis).map(([name, val], i) => ({
-    name, value: Math.round(val.total / val.count), fill: barColors[i % barColors.length],
-  }));
+  const trayekAsalData = summary.byTrayekAsal.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
+  const trayekTujuanData = summary.byTrayekTujuan.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
+  const tnkbKeberangkatanData = summary.byTnkbKeberangkatan.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
+  const tnkbKedatanganData = summary.byTnkbKedatangan.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
+  const perusahaanData = summary.byPerusahaan.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
+  const penumpangPerJenisData = summary.penumpangPerJenis.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
+  const totalPenumpang = summary.totalPenumpangDatang + summary.totalPenumpangBerangkat;
 
   return (
     <div className="space-y-6">
@@ -220,13 +207,13 @@ export default function AnalisisPage() {
         </div>
         <div className="w-px h-8 bg-gray-200" />
         {filterMode === "harian" && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar focus:border-transparent transition-all cursor-pointer" />
-            <span className="text-sm text-text-secondary">Analisis tanggal <span className="font-semibold text-text-primary">{formatTanggal(tanggal)}</span></span>
+            <span className="text-sm text-text-secondary w-full sm:w-auto">Analisis tanggal <span className="font-semibold text-text-primary">{formatTanggal(tanggal)}</span></span>
           </div>
         )}
         {filterMode === "bulanan" && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="relative">
               <button onClick={() => setOpenDropdown(!openDropdown)} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-text-primary px-4 py-2.5 rounded-lg text-sm font-medium transition-colors min-w-[160px] justify-between">
                 <span>{bulan}</span>
@@ -241,13 +228,13 @@ export default function AnalisisPage() {
               )}
             </div>
             <input type="number" min="2020" max="2099" value={tahun} onChange={(e) => setTahun(parseInt(e.target.value))} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-20" />
-            <span className="text-sm text-text-secondary">Analisis bulan <span className="font-semibold text-text-primary">{bulan} {tahun}</span></span>
+            <span className="text-sm text-text-secondary w-full sm:w-auto">Analisis bulan <span className="font-semibold text-text-primary">{bulan} {tahun}</span></span>
           </div>
         )}
       </div>
 
       <div className="relative space-y-6">
-        {isLoading && (
+        {isLoadingSummary && (
           <div className="absolute inset-0 bg-white/80 z-20 flex items-center justify-center rounded-2xl min-h-64">
             <div className="flex flex-col items-center gap-3 bg-white px-8 py-6 rounded-2xl shadow-lg border border-gray-100">
               <Loader2 className="w-8 h-8 text-sidebar animate-spin" />
@@ -264,7 +251,7 @@ export default function AnalisisPage() {
         <div>
           <p className="text-xs text-text-secondary font-medium uppercase tracking-wide">Total Jumlah Penumpang</p>
           <p className="text-3xl font-bold text-text-primary mt-1">{totalPenumpang}</p>
-          <p className="text-xs text-text-secondary mt-0.5">{filteredData.length} kendaraan tercatat</p>
+          <p className="text-xs text-text-secondary mt-0.5">{summary.total} kendaraan tercatat</p>
         </div>
       </div>
 
@@ -293,7 +280,7 @@ export default function AnalisisPage() {
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-md w-full lg:w-[380px]">
           <div className="flex items-center gap-2 mb-4"><div className="w-1 h-4 bg-sidebar rounded-full" /><h3 className="font-bold text-text-primary text-sm">Kedatangan vs Keberangkatan</h3></div>
-          {filteredData.length === 0 ? (
+          {summary.total === 0 ? (
             <div className="h-[220px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
           ) : (
             <>
@@ -428,8 +415,19 @@ export default function AnalisisPage() {
       {/* Tabel Detail */}
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-text-primary text-sm">Detail Analisis Kendaraan <span className="ml-2 bg-sidebar/10 text-sidebar text-xs font-semibold px-2 py-0.5 rounded-full">{filteredData.length} data</span></h3>
+          <h3 className="font-bold text-text-primary text-sm">Detail Analisis Kendaraan <span className="ml-2 bg-sidebar/10 text-sidebar text-xs font-semibold px-2 py-0.5 rounded-full">{summary.total} data</span></h3>
         </div>
+
+        <div className="relative">
+          {isLoadingTable && (
+            <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-lg min-h-[120px]">
+              <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl shadow-md border border-gray-100">
+                <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+                <span className="text-sm font-medium text-text-secondary">Memuat data tabel...</span>
+              </div>
+            </div>
+          )}
+
         {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[1000px]">
@@ -457,7 +455,7 @@ export default function AnalisisPage() {
               {paginatedData.length === 0 ? (
                 <tr><td colSpan={8} className="px-6 py-10 text-center text-sm text-text-secondary">Tidak ada data analisis.</td></tr>
               ) : (
-                paginatedData.map((row, idx) => (
+                paginatedData.map((row) => (
                   <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-3.5 text-sm text-text-secondary whitespace-nowrap">{row.timestamp}</td>
                     <td className="px-6 py-3.5 text-sm font-medium text-text-primary whitespace-nowrap">{row.tnkb}</td>
@@ -485,7 +483,7 @@ export default function AnalisisPage() {
               <div key={row.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-text-secondary font-semibold">#{idx + 1}</span>
+                    <span className="text-xs text-text-secondary font-semibold">#{startIndex + idx + 1}</span>
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${row.status === "Kedatangan" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>{row.status}</span>
                   </div>
                 </div>
@@ -518,11 +516,12 @@ export default function AnalisisPage() {
             ))
           )}
         </div>
+        </div>
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="px-6 pb-5 pt-4 flex items-center justify-between border-t border-gray-100">
-            <div className="flex items-center gap-4">
+          <div className="px-4 sm:px-6 pb-5 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-100">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-text-secondary">
                 Menampilkan {startIndex + 1}–{Math.min(endIndex, totalItems)} dari {totalItems} data
               </span>
@@ -540,7 +539,7 @@ export default function AnalisisPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap justify-center sm:justify-end">
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}

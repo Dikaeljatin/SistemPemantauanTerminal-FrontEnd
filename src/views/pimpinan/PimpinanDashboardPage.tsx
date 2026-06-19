@@ -1,11 +1,11 @@
 "use client";
 
 import { CarFront, TrendingUp, TrendingDown, Users, CalendarDays, Calendar, Filter, ChevronDown, Search, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "../../lib/api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, PieChart, Pie, Legend, LabelList,
+  ResponsiveContainer, Cell, PieChart, Pie, Legend,
 } from "recharts";
 
 // ─── Interface ────────────────────────────────────────────────────────────────
@@ -14,21 +14,52 @@ interface LaporanRow {
   penumpangDatang: number; penumpangBerangkat: number; trayekAsal: string; trayekTujuan: string; perusahaan: string;
 }
 
+interface ChartItem { name: string; value: number; }
+interface JamItem { jam: string; masuk: number; keluar: number; datang: number; berangkat: number; }
+interface Summary {
+  total: number;
+  totalKedatangan: number;
+  totalKeberangkatan: number;
+  totalPenumpangDatang: number;
+  totalPenumpangBerangkat: number;
+  byJenis: ChartItem[];
+  byTrayekAsal: ChartItem[];
+  byTrayekTujuan: ChartItem[];
+  byJam: JamItem[];
+}
+const emptySummary: Summary = {
+  total: 0, totalKedatangan: 0, totalKeberangkatan: 0, totalPenumpangDatang: 0, totalPenumpangBerangkat: 0,
+  byJenis: [], byTrayekAsal: [], byTrayekTujuan: [], byJam: [],
+};
+
+function mapRow(item: any, idx: number): LaporanRow {
+  let ts = "";
+  if (item.timestamp) {
+    const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
+    const [datePart, timePart] = raw.split(" ");
+    const [yyyy, mm, dd] = datePart.split("-");
+    const time = timePart ? timePart.slice(0, 5) : "00:00";
+    ts = `${dd}/${mm}/${yyyy} ${time}`;
+  }
+  return {
+    id: item.pergerakan_id ?? idx,
+    timestamp: ts,
+    petugas: "-",
+    status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
+    tnkb: item.tnkb || "",
+    jenis: item.jenis_kendaraan || "",
+    penumpangDatang: item.status_pergerakan === "kedatangan" ? item.jumlah_penumpang : 0,
+    penumpangBerangkat: item.status_pergerakan === "keberangkatan" ? item.jumlah_penumpang : 0,
+    trayekAsal: item.trayek_asal || "",
+    trayekTujuan: item.trayek_tujuan || "",
+    perusahaan: item.nama_perusahaan || "",
+  };
+}
+
 const bulanList = [
   "Semua","Januari","Februari","Maret","April","Mei","Juni",
   "Juli","Agustus","September","Oktober","November","Desember",
 ];
-const bulanIndex: Record<string, number> = {
-  Januari:0,Februari:1,Maret:2,April:3,Mei:4,Juni:5,
-  Juli:6,Agustus:7,September:8,Oktober:9,November:10,Desember:11,
-};
-
-function parseTimestamp(ts: string): Date {
-  const [datePart, timePart] = ts.split(" ");
-  const [dd, mm, yyyy] = datePart.split("/").map(Number);
-  const [hh, min] = (timePart ?? "00:00").split(":").map(Number);
-  return new Date(yyyy, mm - 1, dd, hh, min);
-}
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({
@@ -52,11 +83,10 @@ function StatCard({
 }
 
 type FilterMode = "harian" | "bulanan";
+const barColors = ["#60a5fa","#4ade80","#fbbf24","#f87171","#a78bfa"];
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PimpinanDashboardPage() {
-  const [laporanData, setLaporanData] = useState<LaporanRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [filterMode, setFilterMode] = useState<FilterMode>("bulanan");
   const [selectedBulan, setSelectedBulan] = useState("Mei");
   const [selectedTahun, setSelectedTahun] = useState(new Date().getFullYear());
@@ -66,131 +96,95 @@ export default function PimpinanDashboardPage() {
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
   const [selectedTanggal, setSelectedTanggal] = useState(todayStr);
 
-  // Fetch data dari API
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
-    setIsLoading(true);
-    apiFetch("/api/pergerakan")
-      .then((res) => res.json())
-      .then((json) => {
-        const rows: LaporanRow[] = (json.data || []).map((item: any, idx: number) => {
-          let ts = "";
-          if (item.timestamp) {
-            const raw = item.timestamp.replace("T", " ").replace("Z", "").split(".")[0];
-            const [datePart, timePart] = raw.split(" ");
-            const [yyyy, mm, dd] = datePart.split("-");
-            const time = timePart ? timePart.slice(0, 5) : "00:00";
-            ts = `${dd}/${mm}/${yyyy} ${time}`;
-          }
-          return {
-            id: item.pergerakan_id ?? idx,
-            timestamp: ts,
-            petugas: "-",
-            status: item.status_pergerakan === "kedatangan" ? "Kedatangan" : "Keberangkatan",
-            tnkb: item.tnkb || "",
-            jenis: item.jenis_kendaraan || "",
-            penumpangDatang: item.status_pergerakan === "kedatangan" ? item.jumlah_penumpang : 0,
-            penumpangBerangkat: item.status_pergerakan === "keberangkatan" ? item.jumlah_penumpang : 0,
-            trayekAsal: item.trayek_asal || "",
-            trayekTujuan: item.trayek_tujuan || "",
-            perusahaan: item.nama_perusahaan || "",
-          };
-        });
-        setLaporanData(rows);
-      })
-      .catch((err) => console.error("Gagal fetch:", err))
-      .finally(() => setIsLoading(false));
-  }, []);
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
-  // Filter data
-  const filteredData = laporanData.filter((k) => {
-    const date = parseTimestamp(k.timestamp);
+  // Bangun query string filter periode yang dipakai bersama tabel & summary
+  const buildFilterParams = useCallback(() => {
+    const params = new URLSearchParams();
+    params.set("filter_mode", filterMode);
     if (filterMode === "harian") {
-      const [yyyy, mm, dd] = selectedTanggal.split("-").map(Number);
-      return date.getFullYear()===yyyy && date.getMonth()===mm-1 && date.getDate()===dd;
+      params.set("tanggal", selectedTanggal);
+    } else {
+      params.set("bulan", String(bulanList.indexOf(selectedBulan)));
+      params.set("tahun", String(selectedTahun));
     }
-    return (selectedBulan === "Semua" || date.getMonth() === bulanIndex[selectedBulan]) && date.getFullYear() === selectedTahun;
-  });
+    return params;
+  }, [filterMode, selectedBulan, selectedTahun, selectedTanggal]);
 
-  // Pagination & Search
+  // Ringkasan grafik — diagregasi di server, tidak perlu fetch semua baris
+  const [summary, setSummary] = useState<Summary>(emptySummary);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
+
+  useEffect(() => {
+    setIsLoadingSummary(true);
+    const params = buildFilterParams();
+    apiFetch(`/api/pergerakan/summary?${params.toString()}`)
+      .then((res) => res.json())
+      .then((json) => setSummary(json))
+      .catch((err) => console.error("Gagal fetch summary:", err))
+      .finally(() => setIsLoadingSummary(false));
+  }, [buildFilterParams]);
+
+  // Tabel — server-side pagination + search
+  const [tableData, setTableData] = useState<LaporanRow[]>([]);
+  const [isLoadingTable, setIsLoadingTable] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [serverTotal, setServerTotal] = useState(0);
+  const [serverTotalPages, setServerTotalPages] = useState(1);
 
-  // Apply search filter for table
-  const tableData = filteredData.filter((k) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return k.tnkb.toLowerCase().includes(q) || k.trayekAsal.toLowerCase().includes(q) ||
-      k.trayekTujuan.toLowerCase().includes(q) || k.perusahaan.toLowerCase().includes(q) ||
-      k.jenis.toLowerCase().includes(q) || k.timestamp.toLowerCase().includes(q);
-  });
+  const fetchTable = useCallback(() => {
+    setIsLoadingTable(true);
+    const params = buildFilterParams();
+    params.set("page", String(currentPage));
+    params.set("limit", String(rowsPerPage));
+    if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+    apiFetch(`/api/pergerakan?${params.toString()}`)
+      .then((res) => res.json())
+      .then((json) => {
+        setTableData((json.data || []).map(mapRow));
+        setServerTotal(json.total ?? 0);
+        setServerTotalPages(json.totalPages ?? 1);
+      })
+      .catch((err) => console.error("Gagal fetch:", err))
+      .finally(() => setIsLoadingTable(false));
+  }, [buildFilterParams, currentPage, rowsPerPage, debouncedSearch]);
 
-  const totalItems = tableData.length;
-  const totalPages = Math.ceil(totalItems / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedData = tableData.slice(startIndex, endIndex);
+  useEffect(() => { fetchTable(); }, [fetchTable]);
 
   // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterMode, selectedBulan, selectedTahun, selectedTanggal, searchQuery]);
+  }, [filterMode, selectedBulan, selectedTahun, selectedTanggal, debouncedSearch]);
 
-  // Statistik
-  const totalKendaraan   = filteredData.length;
-  const totalDatang      = filteredData.filter((k) => k.status === "Kedatangan").length;
-  const totalBerangkat   = filteredData.filter((k) => k.status === "Keberangkatan").length;
-  const totalPenumpang   = filteredData.reduce((s, k) => s + k.penumpangDatang + k.penumpangBerangkat, 0);
+  const totalItems = serverTotal;
+  const totalPages = serverTotalPages;
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedData = tableData;
 
-  // Data chart bar — per jenis kendaraan
-  const jenisCount: Record<string, number> = {};
-  filteredData.forEach((k) => { jenisCount[k.jenis] = (jenisCount[k.jenis] ?? 0) + 1; });
-  const barColors = ["#60a5fa","#4ade80","#fbbf24","#f87171","#a78bfa"];
-  const barData = Object.entries(jenisCount).map(([name, value], i) => ({
-    name, value, fill: barColors[i % barColors.length],
-  }));
+  // Statistik & chart — langsung dari hasil agregat server
+  const totalKendaraan = summary.total;
+  const totalDatang = summary.totalKedatangan;
+  const totalBerangkat = summary.totalKeberangkatan;
+  const totalPenumpangDatang = summary.totalPenumpangDatang;
+  const totalPenumpangBerangkat = summary.totalPenumpangBerangkat;
+  const totalPenumpang = totalPenumpangDatang + totalPenumpangBerangkat;
 
-  // Data chart pie — datang vs berangkat
+  const barData = summary.byJenis.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
   const pieData = [
     { name: "Kedatangan",    value: totalDatang,    color: "#60a5fa" },
     { name: "Keberangkatan", value: totalBerangkat, color: "#4ade80" },
   ];
-
-  // Data chart — trayek asal terbanyak
-  const trayekAsalCount: Record<string, number> = {};
-  filteredData.forEach((k) => { if (k.trayekAsal) trayekAsalCount[k.trayekAsal] = (trayekAsalCount[k.trayekAsal] || 0) + 1; });
-  const trayekAsalData = Object.entries(trayekAsalCount).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value], i) => ({ name, value, fill: barColors[i % barColors.length] }));
-
-  // Data chart — trayek tujuan terbanyak
-  const trayekTujuanCount: Record<string, number> = {};
-  filteredData.forEach((k) => { if (k.trayekTujuan) trayekTujuanCount[k.trayekTujuan] = (trayekTujuanCount[k.trayekTujuan] || 0) + 1; });
-  const trayekTujuanData = Object.entries(trayekTujuanCount).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name, value], i) => ({ name, value, fill: barColors[i % barColors.length] }));
-
-  // Data chart — pergerakan per jam
-  const perJamCount: Record<string, { masuk: number; keluar: number }> = {};
-  filteredData.forEach((k) => {
-    const hour = k.timestamp.split(" ")[1]?.split(":")[0] || "00";
-    const jam = `${hour}:00`;
-    if (!perJamCount[jam]) perJamCount[jam] = { masuk: 0, keluar: 0 };
-    if (k.status === "Kedatangan") perJamCount[jam].masuk++;
-    else perJamCount[jam].keluar++;
-  });
-  const perJamData = Object.entries(perJamCount).sort((a, b) => a[0].localeCompare(b[0])).map(([jam, val]) => ({ jam, masuk: val.masuk, keluar: val.keluar }));
-
-  // Data chart — jumlah penumpang per jam (kedatangan vs keberangkatan)
-  const penumpangPerJamCount: Record<string, { datang: number; berangkat: number }> = {};
-  filteredData.forEach((k) => {
-    const hour = k.timestamp.split(" ")[1]?.split(":")[0] || "00";
-    const jam = `${hour}:00`;
-    if (!penumpangPerJamCount[jam]) penumpangPerJamCount[jam] = { datang: 0, berangkat: 0 };
-    penumpangPerJamCount[jam].datang += k.penumpangDatang;
-    penumpangPerJamCount[jam].berangkat += k.penumpangBerangkat;
-  });
-  const penumpangPerJamData = Object.entries(penumpangPerJamCount)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([jam, val]) => ({ jam, datang: val.datang, berangkat: val.berangkat }));
-  const totalPenumpangDatang = filteredData.reduce((s, k) => s + k.penumpangDatang, 0);
-  const totalPenumpangBerangkat = filteredData.reduce((s, k) => s + k.penumpangBerangkat, 0);
+  const trayekAsalData = summary.byTrayekAsal.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
+  const trayekTujuanData = summary.byTrayekTujuan.map((d, i) => ({ ...d, fill: barColors[i % barColors.length] }));
+  const perJamData = summary.byJam.map((d) => ({ jam: d.jam, masuk: d.masuk, keluar: d.keluar }));
+  const penumpangPerJamData = summary.byJam.map((d) => ({ jam: d.jam, datang: d.datang, berangkat: d.berangkat }));
 
   // Label filter aktif
   const filterLabel = filterMode === "harian"
@@ -210,7 +204,7 @@ export default function PimpinanDashboardPage() {
 
       {/* Konten utama dengan overlay loading */}
       <div className="relative space-y-6">
-      {isLoading && (
+      {isLoadingSummary && (
         <div className="absolute inset-0 bg-white/80 z-20 flex items-center justify-center rounded-2xl min-h-64">
           <div className="flex flex-col items-center gap-3 bg-white px-8 py-6 rounded-2xl shadow-lg border border-gray-100">
             <Loader2 className="w-8 h-8 text-sidebar animate-spin" />
@@ -386,10 +380,7 @@ export default function PimpinanDashboardPage() {
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v) => [`${v}`, "Jumlah"]} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="value" position="top" style={{ fontSize: 11, fill: "#374151", fontWeight: 600 }} />
-                  {trayekAsalData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Bar>
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>{trayekAsalData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-3 bg-gray-50 rounded-lg p-3">
@@ -410,10 +401,7 @@ export default function PimpinanDashboardPage() {
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v) => [`${v}`, "Jumlah"]} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="value" position="top" style={{ fontSize: 11, fill: "#374151", fontWeight: 600 }} />
-                  {trayekTujuanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Bar>
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>{trayekTujuanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-3 bg-gray-50 rounded-lg p-3">
@@ -498,7 +486,7 @@ export default function PimpinanDashboardPage() {
           <h3 className="font-bold text-text-primary text-sm">
             Detail Laporan Petugas
             <span className="ml-2 bg-sidebar/10 text-sidebar text-xs font-semibold px-2 py-0.5 rounded-full">
-              {tableData.length} data
+              {totalItems} data
             </span>
           </h3>
           <div className="relative w-full sm:w-auto">
@@ -512,6 +500,15 @@ export default function PimpinanDashboardPage() {
             />
           </div>
         </div>
+        <div className="relative">
+        {isLoadingTable && (
+          <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-lg min-h-[120px]">
+            <div className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl shadow-md border border-gray-100">
+              <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+              <span className="text-sm font-medium text-text-secondary">Memuat laporan...</span>
+            </div>
+          </div>
+        )}
         {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[1100px]">
@@ -600,6 +597,7 @@ export default function PimpinanDashboardPage() {
             ))
           )}
         </div>
+        </div>
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
@@ -622,7 +620,7 @@ export default function PimpinanDashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap justify-center sm:justify-end">
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}

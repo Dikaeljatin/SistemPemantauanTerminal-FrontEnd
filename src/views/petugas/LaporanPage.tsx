@@ -538,7 +538,7 @@ export default function LaporanPage() {
                     </select>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-wrap justify-center sm:justify-end">
                   <button
                     onClick={() => setPreviewPage(1)}
                     disabled={previewPage === 1}
