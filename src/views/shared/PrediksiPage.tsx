@@ -90,7 +90,7 @@ export default function PrediksiPage() {
             <Info className="w-8 h-8 text-red-400" />
           </div>
           <h3 className="text-lg font-bold text-text-primary mb-2">Fitur Prediksi Tidak Tersedia</h3>
-          <p className="text-text-secondary text-sm">Fitur prediksi sedang dinonaktifkan oleh administrator. Silakan hubungi super admin untuk informasi lebih lanjut.</p>
+          <p className="text-text-secondary text-sm">Fitur prediksi sedang dinonaktifkan oleh administrator. Silakan hubungi admin untuk informasi lebih lanjut.</p>
         </div>
       </div>
     );

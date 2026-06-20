@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Globe, CarFront, Eye, EyeOff, Lock, Users, ShieldCheck, Briefcase, Crown, ChevronDown, Check, ArrowLeft } from "lucide-react";
 
-export type UserRole = "super_admin" | "petugas" | "pimpinan";
+export type UserRole = "admin" | "petugas" | "pimpinan";
 
 interface LoginPageProps {
   onLogin: (role: UserRole, username: string) => void;
@@ -11,9 +11,9 @@ interface LoginPageProps {
 }
 
 const roles: { value: UserRole; label: string; icon: React.ReactNode }[] = [
-  { value: "super_admin", label: "Super Admin", icon: <ShieldCheck className="w-4 h-4" /> },
-  { value: "petugas",     label: "Petugas",     icon: <Briefcase   className="w-4 h-4" /> },
-  { value: "pimpinan",    label: "Pimpinan",    icon: <Crown       className="w-4 h-4" /> },
+  { value: "admin",    label: "Admin",    icon: <ShieldCheck className="w-4 h-4" /> },
+  { value: "petugas",  label: "Petugas",  icon: <Briefcase   className="w-4 h-4" /> },
+  { value: "pimpinan", label: "Pimpinan", icon: <Crown       className="w-4 h-4" /> },
 ];
 
 export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
@@ -22,7 +22,7 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selectedRole, setSelectedRole] = useState<UserRole>("super_admin");
+  const [selectedRole, setSelectedRole] = useState<UserRole>("admin");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

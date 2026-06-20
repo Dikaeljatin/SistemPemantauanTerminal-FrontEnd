@@ -19,8 +19,8 @@ export default function LoginRoute() {
       case "pimpinan":
         router.push("/pimpinan/dashboard");
         break;
-      case "super_admin":
-        router.push("/super-admin/dashboard");
+      case "admin":
+        router.push("/admin/dashboard");
         break;
     }
   };

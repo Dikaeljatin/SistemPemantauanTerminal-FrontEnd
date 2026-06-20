@@ -1,3 +1,3 @@
 "use client";
-import KonfigurasiPage from "../../../../views/super-admin/KonfigurasiPage";
+import KonfigurasiPage from "../../../../views/admin/KonfigurasiPage";
 export default function KonfigurasiRoute() { return <KonfigurasiPage />; }

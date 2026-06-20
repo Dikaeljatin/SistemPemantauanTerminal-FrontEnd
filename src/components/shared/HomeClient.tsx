@@ -14,7 +14,7 @@ export default function HomeClient() {
       switch (role) {
         case "petugas": router.replace("/petugas/dashboard"); return;
         case "pimpinan": router.replace("/pimpinan/dashboard"); return;
-        case "super_admin": router.replace("/super-admin/dashboard"); return;
+        case "admin": router.replace("/admin/dashboard"); return;
       }
     }
     setChecked(true);

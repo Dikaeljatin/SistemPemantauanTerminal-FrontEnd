@@ -7,13 +7,13 @@ import LogoutConfirmModal from "../../../components/layout/LogoutConfirmModal";
 import { apiFetch } from "../../../lib/api";
 
 const menuItems = [
-  { id: "dashboard",    label: "DASHBOARD",    icon: LayoutDashboard, href: "/super-admin/dashboard" },
-  { id: "kelola-data",  label: "KELOLA DATA",  icon: Database,        href: "/super-admin/kelola-data" },
-  { id: "kelola-user",  label: "KELOLA USER",  icon: Users,           href: "/super-admin/kelola-user" },
-  { id: "konfigurasi",  label: "KONFIGURASI",  icon: Settings,        href: "/super-admin/konfigurasi" },
+  { id: "dashboard",    label: "DASHBOARD",    icon: LayoutDashboard, href: "/admin/dashboard" },
+  { id: "kelola-data",  label: "KELOLA DATA",  icon: Database,        href: "/admin/kelola-data" },
+  { id: "kelola-user",  label: "KELOLA USER",  icon: Users,           href: "/admin/kelola-user" },
+  { id: "konfigurasi",  label: "KONFIGURASI",  icon: Settings,        href: "/admin/konfigurasi" },
 ];
 
-export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -50,7 +50,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
         {!collapsed && (
           <div className="mx-4 mb-4 flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2.5">
             <ShieldCheck className="w-4 h-4 text-accent flex-shrink-0" />
-            <span className="text-accent text-xs font-bold tracking-widest uppercase">Super Admin</span>
+            <span className="text-accent text-xs font-bold tracking-widest uppercase">Admin</span>
           </div>
         )}
 
@@ -79,8 +79,8 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           <button onClick={() => setSidebarOpen(true)} className="md:hidden w-10 h-10 bg-sidebar text-white rounded-lg flex items-center justify-center shadow-lg"><Menu className="w-5 h-5" /></button>
           <div className="flex items-center gap-3 ml-auto">
             <div className="text-right">
-              <p className="font-bold text-text-primary text-sm tracking-wide uppercase">{userInfo?.username || "SUPER ADMIN"}</p>
-              <p className="text-xs text-text-secondary">Super Admin</p>
+              <p className="font-bold text-text-primary text-sm tracking-wide uppercase">{userInfo?.username || "ADMIN"}</p>
+              <p className="text-xs text-text-secondary">Admin</p>
             </div>
             <div className="w-10 h-10 rounded-full border-2 border-text-primary flex items-center justify-center"><UserCircle className="w-7 h-7 text-text-primary" /></div>
           </div>
