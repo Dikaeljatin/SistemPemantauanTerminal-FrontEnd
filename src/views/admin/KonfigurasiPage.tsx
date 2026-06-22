@@ -88,7 +88,7 @@ export default function KonfigurasiPage() {
             </div>
             <button
               onClick={handleImportToggle}
-              className={`relative w-12 h-6 rounded-full transition-colors ${importEnabled ? "bg-sidebar" : "bg-gray-300"}`}
+              className={`relative w-12 h-6 rounded-full shrink-0 transition-colors ${importEnabled ? "bg-sidebar" : "bg-gray-300"}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${importEnabled ? "translate-x-6" : "translate-x-0"}`} />
             </button>
@@ -107,7 +107,7 @@ export default function KonfigurasiPage() {
             </div>
             <button
               onClick={handleExportToggle}
-              className={`relative w-12 h-6 rounded-full transition-colors ${exportEnabled ? "bg-sidebar" : "bg-gray-300"}`}
+              className={`relative w-12 h-6 rounded-full shrink-0 transition-colors ${exportEnabled ? "bg-sidebar" : "bg-gray-300"}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${exportEnabled ? "translate-x-6" : "translate-x-0"}`} />
             </button>
@@ -126,7 +126,7 @@ export default function KonfigurasiPage() {
             </div>
             <button
               onClick={handlePrediksiToggle}
-              className={`relative w-12 h-6 rounded-full transition-colors ${prediksiEnabled ? "bg-sidebar" : "bg-gray-300"}`}
+              className={`relative w-12 h-6 rounded-full shrink-0 transition-colors ${prediksiEnabled ? "bg-sidebar" : "bg-gray-300"}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${prediksiEnabled ? "translate-x-6" : "translate-x-0"}`} />
             </button>

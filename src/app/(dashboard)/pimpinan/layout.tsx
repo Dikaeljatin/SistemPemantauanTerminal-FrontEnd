@@ -20,7 +20,7 @@ export default function PimpinanLayout({ children }: { children: React.ReactNode
   const [collapsed, setCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showProfile, setShowProfile] = useState(false);
-  const [userInfo, setUserInfo] = useState<{ id: number; nama: string; email: string; username: string } | null>(null);
+  const [userInfo, setUserInfo] = useState<{ nama: string; email: string } | null>(null);
   const [username, setUsername] = useState("");
 
   useEffect(() => {
@@ -41,11 +41,11 @@ export default function PimpinanLayout({ children }: { children: React.ReactNode
     const u = typeof window !== "undefined" ? sessionStorage.getItem("app_username") : null;
     if (u) {
       setUsername(u);
-      apiFetch("/api/users")
+      apiFetch("/api/users/me")
         .then((res) => res.json())
         .then((json) => {
-          const user = (json.data || []).find((usr: any) => usr.username === u);
-          if (user) setUserInfo({ id: user.user_id, nama: user.nama, email: user.email || "", username: user.username });
+          const user = json.data;
+          if (user) setUserInfo({ nama: user.nama, email: user.email || "" });
         })
         .catch(() => {});
     }
@@ -116,11 +116,8 @@ export default function PimpinanLayout({ children }: { children: React.ReactNode
 
         {showProfile && userInfo && (
           <EditProfileModal
-            userId={userInfo.id}
             currentNama={userInfo.nama}
             currentEmail={userInfo.email}
-            currentUsername={userInfo.username}
-            role="pimpinan"
             onClose={() => setShowProfile(false)}
             onSaved={(newNama) => setUserInfo({ ...userInfo, nama: newNama })}
           />

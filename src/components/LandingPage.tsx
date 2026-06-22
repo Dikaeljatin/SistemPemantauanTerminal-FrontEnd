@@ -21,6 +21,8 @@ interface DataRow {
 
 const barColors = ["#60a5fa", "#4ade80", "#fbbf24", "#f87171", "#a78bfa", "#34d399"];
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
 export default function LandingPage({ onGoToLogin }: LandingPageProps) {
   const [allData, setAllData] = useState<DataRow[]>([]);
   const [activeTab, setActiveTab] = useState<"kedatangan" | "keberangkatan">("kedatangan");
@@ -66,9 +68,8 @@ export default function LandingPage({ onGoToLogin }: LandingPageProps) {
   }, []);
 
   // Filter data hari ini saja
-  const pad = (n: number) => String(n).padStart(2, "0");
   const now = new Date();
-  const todayPrefix = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+  const todayPrefix = `${pad2(now.getDate())}/${pad2(now.getMonth() + 1)}/${now.getFullYear()}`;
   const todayData = allData.filter((d) => d.timestamp.startsWith(todayPrefix));
 
   // Stats
@@ -79,7 +80,7 @@ export default function LandingPage({ onGoToLogin }: LandingPageProps) {
   const hourCount: Record<number, number> = {};
   todayData.forEach((d) => { hourCount[d.hour] = (hourCount[d.hour] || 0) + 1; });
   const busiestHour = Object.entries(hourCount).sort((a, b) => b[1] - a[1])[0];
-  const jamTersibuk = busiestHour ? `${pad(parseInt(busiestHour[0]))}:00` : "-";
+  const jamTersibuk = busiestHour ? `${pad2(parseInt(busiestHour[0]))}:00` : "-";
 
   // Tujuan favorit
   const tujuanCount: Record<string, number> = {};
@@ -93,7 +94,7 @@ export default function LandingPage({ onGoToLogin }: LandingPageProps) {
     const kedatangan = todayData.filter((d) => d.hour === h && d.status === "Kedatangan").length;
     const keberangkatan = todayData.filter((d) => d.hour === h && d.status === "Keberangkatan").length;
     if (kedatangan > 0 || keberangkatan > 0) {
-      hourlyData.push({ jam: `${pad(h)}:00`, kedatangan, keberangkatan });
+      hourlyData.push({ jam: `${pad2(h)}:00`, kedatangan, keberangkatan });
     }
   }
 

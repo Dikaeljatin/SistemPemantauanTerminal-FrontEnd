@@ -5,17 +5,14 @@ import { X, User, Mail, Lock, Eye, EyeOff, Check } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 
 interface EditProfileModalProps {
-  userId: number;
   currentNama: string;
   currentEmail: string;
-  currentUsername: string;
-  role: string;
   onClose: () => void;
   onSaved: (nama: string) => void;
 }
 
 export default function EditProfileModal({
-  userId, currentNama, currentEmail, currentUsername, role, onClose, onSaved,
+  currentNama, currentEmail, onClose, onSaved,
 }: EditProfileModalProps) {
   const [nama, setNama] = useState(currentNama);
   const [email, setEmail] = useState(currentEmail);
@@ -49,15 +46,12 @@ export default function EditProfileModal({
       const body: Record<string, string> = {
         nama: nama.trim(),
         email: email.trim(),
-        username: currentUsername,
-        role,
-        status: "aktif",
       };
       if (password) {
         body.password = password;
       }
 
-      const res = await apiFetch(`/api/users/${userId}`, {
+      const res = await apiFetch("/api/users/me", {
         method: "PUT",
         body: JSON.stringify(body),
       });

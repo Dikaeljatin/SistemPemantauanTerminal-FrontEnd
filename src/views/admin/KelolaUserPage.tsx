@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Plus, Search, Shield, User, Pencil, Trash2, X, Check, Loader2 } from "lucide-react";
+import { Users, Plus, Search, Shield, User, Pencil, Trash2, X, Check, Loader2, Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { apiFetch } from "../../lib/api";
 
@@ -27,13 +27,15 @@ const roles: Role[] = ["Admin", "Petugas", "Pimpinan"];
 // ─── Modal Tambah / Edit ──────────────────────────────────────────────────────
 interface ModalProps {
   user?: UserData;
-  onSave: (data: Omit<UserData, "id">) => void;
+  onSave: (data: Omit<UserData, "id"> & { password?: string }) => void;
   onClose: () => void;
 }
 
 function UserModal({ user, onSave, onClose }: ModalProps) {
   const [nama,   setNama]   = useState(user?.nama   ?? "");
   const [email,  setEmail]  = useState(user?.email  ?? "");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role,   setRole]   = useState<Role>(user?.role   ?? "Petugas");
   const [status, setStatus] = useState<Status>(user?.status ?? "Aktif");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -43,13 +45,20 @@ function UserModal({ user, onSave, onClose }: ModalProps) {
     if (!nama.trim())  e.nama  = "Nama wajib diisi";
     if (!email.trim()) e.email = "Email wajib diisi";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Format email tidak valid";
+    if (!user) {
+      if (!password) e.password = "Password wajib diisi";
+      else if (password.length < 6) e.password = "Password minimal 6 karakter";
+    }
     return e;
   };
 
   const handleSave = () => {
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-    onSave({ nama, email, username: user?.username ?? nama.toLowerCase().replace(/\s+/g, ""), role, status });
+    onSave({
+      nama, email, username: user?.username ?? nama.toLowerCase().replace(/\s+/g, ""), role, status,
+      ...(user ? {} : { password }),
+    });
   };
 
   const inputCls = (key: string) =>
@@ -98,6 +107,30 @@ function UserModal({ user, onSave, onClose }: ModalProps) {
             />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
+
+          {/* Password — hanya saat tambah user baru */}
+          {!user && (
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Minimal 6 karakter"
+                  className={`${inputCls("password")} pr-10`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+            </div>
+          )}
 
           {/* Role */}
           <div>
@@ -234,11 +267,11 @@ export default function KelolaUserPage() {
       u.role.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = async (data: Omit<UserData, "id">) => {
+  const handleAdd = async (data: Omit<UserData, "id"> & { password?: string }) => {
     try {
       const res = await apiFetch("/api/users", {
         method: "POST",
-        body: JSON.stringify({ nama: data.nama, email: data.email, username: data.username, password: data.username + "123", role: data.role.toLowerCase() }),
+        body: JSON.stringify({ nama: data.nama, email: data.email, username: data.username, password: data.password, role: data.role.toLowerCase() }),
       });
       const json = await res.json();
       if (res.ok) {
