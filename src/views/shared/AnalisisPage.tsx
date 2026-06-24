@@ -275,11 +275,17 @@ export default function AnalisisPage() {
                   <Bar dataKey="value" radius={[6, 6, 0, 0]}>{jenisData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
                 </BarChart>
               </ResponsiveContainer>
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Grafik menampilkan distribusi jumlah kendaraan berdasarkan jenisnya sesuai filter yang aktif.</p>
+              </div>
             </>
           )}
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-md w-full lg:w-[380px]">
-          <div className="flex items-center gap-2 mb-4"><div className="w-1 h-4 bg-sidebar rounded-full" /><h3 className="font-bold text-text-primary text-sm">Kedatangan vs Keberangkatan</h3></div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-1 h-4 bg-sidebar rounded-full" />
+            <h3 className="font-bold text-text-primary text-sm">Kedatangan vs Keberangkatan</h3>
+          </div>
           {summary.total === 0 ? (
             <div className="h-[220px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
           ) : (
@@ -293,6 +299,9 @@ export default function AnalisisPage() {
                   <Tooltip contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(value, name) => [`${value}`, `${name}`]} />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Perbandingan jumlah kendaraan yang datang dan berangkat sesuai filter yang aktif.</p>
+              </div>
             </>
           )}
         </div>
@@ -316,6 +325,9 @@ export default function AnalisisPage() {
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>{trayekAsalData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
                 </BarChart>
               </ResponsiveContainer>
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Trayek asal yang paling sering tercatat pada data pergerakan kendaraan.</p>
+              </div>
             </>
           )}
         </div>
@@ -335,6 +347,9 @@ export default function AnalisisPage() {
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>{trayekTujuanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
                 </BarChart>
               </ResponsiveContainer>
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Trayek tujuan yang paling sering tercatat pada data pergerakan kendaraan.</p>
+              </div>
             </>
           )}
         </div>
@@ -347,15 +362,20 @@ export default function AnalisisPage() {
           {tnkbKeberangkatanData.length === 0 ? (
             <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
           ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={tnkbKeberangkatanData} barSize={48}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(value) => [`${value}`, "Jumlah keberangkatan"]} labelFormatter={(label, payload) => `${label}${payload?.[0]?.payload?.jenis ? ` (${payload[0].payload.jenis})` : ""}`} />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>{tnkbKeberangkatanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={tnkbKeberangkatanData} barSize={48}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(value) => [`${value}`, "Jumlah keberangkatan"]} labelFormatter={(label, payload) => `${label}${payload?.[0]?.payload?.jenis ? ` (${payload[0].payload.jenis})` : ""}`} />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>{tnkbKeberangkatanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> 5 kendaraan (TNKB) dengan jumlah keberangkatan terbanyak.</p>
+              </div>
+            </>
           )}
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-md flex-1">
@@ -363,15 +383,20 @@ export default function AnalisisPage() {
           {tnkbKedatanganData.length === 0 ? (
             <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
           ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={tnkbKedatanganData} barSize={48}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(value) => [`${value}`, "Jumlah kedatangan"]} labelFormatter={(label, payload) => `${label}${payload?.[0]?.payload?.jenis ? ` (${payload[0].payload.jenis})` : ""}`} />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>{tnkbKedatanganData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={tnkbKedatanganData} barSize={48}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(value) => [`${value}`, "Jumlah kedatangan"]} labelFormatter={(label, payload) => `${label}${payload?.[0]?.payload?.jenis ? ` (${payload[0].payload.jenis})` : ""}`} />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>{tnkbKedatanganData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> 5 kendaraan (TNKB) dengan jumlah kedatangan terbanyak.</p>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -383,15 +408,20 @@ export default function AnalisisPage() {
           {perusahaanData.length === 0 ? (
             <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
           ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={perusahaanData} barSize={32} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} width={100} />
-                <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v) => [`${v}`, "Jumlah"]} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>{perusahaanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={perusahaanData} barSize={32} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} width={100} />
+                  <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v) => [`${v}`, "Jumlah"]} />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>{perusahaanData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Perusahaan otobus dengan jumlah kendaraan tercatat terbanyak.</p>
+              </div>
+            </>
           )}
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-md flex-1 min-w-0">
@@ -399,15 +429,20 @@ export default function AnalisisPage() {
           {penumpangPerJenisData.length === 0 ? (
             <div className="h-[240px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
           ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={penumpangPerJenisData} barSize={44}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v) => [`${v} penumpang`, "Rata-rata"]} />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>{penumpangPerJenisData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={penumpangPerJenisData} barSize={44}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(v) => [`${v} penumpang`, "Rata-rata"]} />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>{penumpangPerJenisData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Rata-rata jumlah penumpang yang diangkut untuk setiap jenis kendaraan.</p>
+              </div>
+            </>
           )}
         </div>
       </div>

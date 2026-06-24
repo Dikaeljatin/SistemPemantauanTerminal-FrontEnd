@@ -76,6 +76,9 @@ export default function PieChartCard() {
               />
             </PieChart>
           </ResponsiveContainer>
+          <div className="mt-3 bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Perbandingan jumlah kendaraan yang datang dan berangkat.</p>
+          </div>
         </>
       )}
     </div>

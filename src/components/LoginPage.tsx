@@ -234,15 +234,8 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
               </div>
             </div>
 
-            {/* Remember me & Forgot password */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-white/20 bg-white/10 text-accent focus:ring-accent/50"
-                />
-                <span className="text-white/50 text-xs">Ingat saya</span>
-              </label>
+            {/* Forgot password */}
+            <div className="flex items-center justify-end">
               <button
                 type="button"
                 className="text-accent text-xs hover:text-accent-hover transition-colors"

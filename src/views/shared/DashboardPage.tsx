@@ -225,13 +225,19 @@ export default function DashboardPage() {
                   <Bar dataKey="value" radius={[6, 6, 0, 0]}>{jenisChartData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}</Bar>
                 </BarChart>
               </ResponsiveContainer>
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Grafik menampilkan distribusi jumlah kendaraan berdasarkan jenisnya sesuai filter yang aktif.</p>
+              </div>
             </>
           )}
         </div>
 
         {/* Pie Chart */}
         <div className="bg-white rounded-2xl p-6 shadow-md w-full lg:w-[380px]">
-          <div className="flex items-center gap-2 mb-4"><div className="w-1 h-4 bg-sidebar rounded-full" /><h3 className="font-bold text-text-primary text-sm">Kedatangan vs Keberangkatan</h3></div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-1 h-4 bg-sidebar rounded-full" />
+            <h3 className="font-bold text-text-primary text-sm">Kedatangan vs Keberangkatan</h3>
+          </div>
           {summary.total === 0 ? (
             <div className="h-[220px] flex items-center justify-center text-text-secondary text-sm">Tidak ada data</div>
           ) : (
@@ -245,6 +251,9 @@ export default function DashboardPage() {
                   <Tooltip contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }} formatter={(value, name) => [`${value}`, `${name}`]} />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-text-secondary"><span className="font-semibold text-text-primary">Keterangan:</span> Perbandingan jumlah kendaraan yang datang dan berangkat sesuai filter yang aktif.</p>
+              </div>
             </>
           )}
         </div>
