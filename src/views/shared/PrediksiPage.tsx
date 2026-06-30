@@ -105,6 +105,11 @@ export default function PrediksiPage() {
       setErrorRange("Tanggal akhir tidak boleh sebelum tanggal mulai.");
       return;
     }
+    const diffDays = Math.round((new Date(tanggalAkhir).getTime() - new Date(tanggalMulai).getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays > 30) {
+      setErrorRange("Rentang prediksi maksimal 30 hari (1 bulan).");
+      return;
+    }
     setErrorRange("");
     setIsLoading(true);
 
@@ -191,6 +196,7 @@ export default function PrediksiPage() {
                 type="date"
                 value={tanggalAkhir}
                 min={tanggalMulai || undefined}
+                max={tanggalMulai ? new Date(new Date(tanggalMulai).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] : undefined}
                 onChange={(e) => { setTanggalAkhir(e.target.value); setErrorRange(""); }}
                 className="bg-transparent outline-none text-sm text-text-primary w-36 cursor-pointer"
               />
@@ -294,6 +300,73 @@ export default function PrediksiPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Grafik Prediksi per Hari */}
+      {hasPredict && perDay.length > 1 && (
+        <>
+          <div className="bg-white rounded-2xl p-6 shadow-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-text-primary text-sm">Grafik Prediksi Kendaraan per Hari</h3>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /><span className="text-xs text-text-secondary">Kedatangan</span></div>
+                <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-400 inline-block" /><span className="text-xs text-text-secondary">Keberangkatan</span></div>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={perDay} barSize={perDay.length > 14 ? 10 : 20}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="tanggal" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip
+                  cursor={{ fill: "rgba(0,0,0,0.04)" }}
+                  contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }}
+                  formatter={(value, name) => [`${value} kendaraan`, name === "masuk" ? "Kedatangan" : "Keberangkatan"]}
+                  labelFormatter={(label) => { const item = perDay.find((d) => d.tanggal === label); return item ? item.tanggal_full : label; }}
+                />
+                <Bar dataKey="masuk" fill="#60a5fa" radius={[4, 4, 0, 0]} name="masuk" />
+                <Bar dataKey="keluar" fill="#f87171" radius={[4, 4, 0, 0]} name="keluar" />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-3 bg-gray-50 rounded-lg p-3">
+              <p className="text-xs text-text-secondary">
+                <span className="font-semibold text-text-primary">Keterangan:</span>{" "}
+                Grafik menampilkan prediksi jumlah kendaraan kedatangan dan keberangkatan untuk setiap hari dalam periode yang dipilih.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-text-primary text-sm">Grafik Prediksi Penumpang per Hari</h3>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
+                <span className="text-xs text-text-secondary">Penumpang</span>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={perDay} barSize={perDay.length > 14 ? 10 : 20}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="tanggal" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={{ stroke: "#e5e7eb" }} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip
+                  cursor={{ fill: "rgba(0,0,0,0.04)" }}
+                  contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", fontSize: "12px", padding: "10px 14px" }}
+                  formatter={(value) => [`${value} penumpang`, "Jumlah"]}
+                  labelFormatter={(label) => { const item = perDay.find((d) => d.tanggal === label); return item ? item.tanggal_full : label; }}
+                />
+                <Bar dataKey="penumpang" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-3 bg-gray-50 rounded-lg p-3">
+              <p className="text-xs text-text-secondary">
+                <span className="font-semibold text-text-primary">Keterangan:</span>{" "}
+                Grafik menampilkan prediksi jumlah penumpang untuk setiap hari dalam periode yang dipilih.
+                Total penumpang yang diprediksi: <span className="font-semibold text-text-primary">{summary?.total_penumpang}</span> orang.
+              </p>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Grafik Prediksi Kendaraan */}
