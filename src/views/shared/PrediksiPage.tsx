@@ -261,42 +261,27 @@ export default function PrediksiPage() {
               <TrendingUp className="w-6 h-6 text-sidebar" />
             </div>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="font-bold text-text-primary text-sm">Informasi Akurasi Prediksi</h3>
-                <Info className="w-4 h-4 text-text-secondary" />
+              <h3 className="font-bold text-text-primary text-sm mb-3">Informasi Akurasi Prediksi</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                <div>
+                  <p className="text-xs text-text-secondary mb-1">Akurasi Keseluruhan</p>
+                  <p className="text-xl font-bold text-sidebar">
+                    {accuracy.overall_accuracy !== null ? `${accuracy.overall_accuracy}%` : "-"}
+                  </p>
+                </div>
+                {([
+                  { label: "MAPE Kendaraan Kedatangan", value: accuracy.masuk_mape, color: "text-blue-600" },
+                  { label: "MAPE Kendaraan Keberangkatan", value: accuracy.keluar_mape, color: "text-orange-500" },
+                  { label: "MAPE Penumpang", value: accuracy.penumpang_mape, color: "text-green-600" },
+                ] as { label: string; value: number | null; color: string }[]).map(({ label, value, color }) => (
+                  <div key={label}>
+                    <p className="text-xs text-text-secondary mb-1">{label}</p>
+                    <p className={`text-xl font-bold ${color}`}>
+                      {value !== null ? `${value}%` : "-"}
+                    </p>
+                  </div>
+                ))}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-xs text-text-secondary">Akurasi Keseluruhan</p>
-                  <p className="text-xl font-bold text-sidebar">{accuracy.overall_accuracy !== null ? `${accuracy.overall_accuracy}%` : "-"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-text-secondary">MAPE Kendaraan Kedatangan</p>
-                  <p className="text-xl font-bold text-blue-600">{accuracy.masuk_mape !== null ? `${accuracy.masuk_mape}%` : "-"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-text-secondary">MAPE Kendaraan Keberangkatan</p>
-                  <p className="text-xl font-bold text-green-600">{accuracy.keluar_mape !== null ? `${accuracy.keluar_mape}%` : "-"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-text-secondary">MAPE Penumpang</p>
-                  <p className="text-xl font-bold text-amber-600">{accuracy.penumpang_mape !== null ? `${accuracy.penumpang_mape}%` : "-"}</p>
-                </div>
-              </div>
-              <p className="text-xs text-text-secondary mt-3">
-                <span className="font-semibold text-text-primary">Metode:</span> {meta.method}
-                {" • "}
-                <span className="font-semibold text-text-primary">Data training:</span> {meta.training_data_points} hari
-                {" • "}
-                <span className="font-semibold text-text-primary">Hari libur:</span> {meta.used_holidays ? "Ya (Indonesia)" : "Tidak"}
-                {accuracy.cv_mape !== null && (
-                  <> {" • "}<span className="font-semibold text-text-primary">CV MAPE:</span> {accuracy.cv_mape}%</>
-                )}
-              </p>
-              <p className="text-xs text-text-secondary mt-1 italic">
-                MAPE dihitung dari <span className="font-semibold">honest hold-out</span> (data 14 hari terakhir tidak pernah dilihat saat tuning).
-                MAPE rendah → akurasi tinggi. Akurasi = 100% - MAPE.
-              </p>
             </div>
           </div>
         </div>

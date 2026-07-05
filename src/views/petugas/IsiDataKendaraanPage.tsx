@@ -384,11 +384,11 @@ function FormView({
         </div>
       )}
 
-      {/* Form grid */}
+      {/* Form grid — kiri: Timestamp,Status,Jenis,Kapasitas,TNKB | kanan: P.Datang,P.Berangkat,Trayek Asal,Trayek Tujuan,Perusahaan */}
       <form onSubmit={handleSubmit} className="w-full max-w-3xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
 
-          {/* Timestamp */}
+          {/* Baris 1 kiri: Timestamp */}
           <Field label="Timestamp" error={errors.timestamp}>
             <input
               type="datetime-local"
@@ -398,33 +398,25 @@ function FormView({
             />
           </Field>
 
-          {/* Jumlah Penumpang utama (sesuai mode) */}
-          <Field
-            label={mode === "kedatangan" ? "Jumlah Penumpang Kedatangan" : "Jumlah Penumpang Keberangkatan"}
-            error={mode === "kedatangan" ? errors.penumpangDatang : errors.penumpangBerangkat}
-          >
-            <div className="relative">
-              <input
-                type="number"
-                min="0"
-                max={maxPenumpang}
-                value={mode === "kedatangan" ? form.penumpangDatang : form.penumpangBerangkat}
-                onChange={(e) =>
-                  handlePenumpangChange(
-                    mode === "kedatangan" ? "penumpangDatang" : "penumpangBerangkat",
-                    e.target.value
-                  )
-                }
-                placeholder="0"
-                className={inputCls(!!(mode === "kedatangan" ? errors.penumpangDatang : errors.penumpangBerangkat))}
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-text-secondary">
-                max {maxPenumpang}
-              </span>
-            </div>
+          {/* Baris 1 kanan: Jumlah Penumpang Kedatangan */}
+          <Field label="Jumlah Penumpang Kedatangan" error={errors.penumpangDatang}>
+            {mode === "kedatangan" ? (
+              <div className="relative">
+                <input
+                  type="number" min="0" max={maxPenumpang}
+                  value={form.penumpangDatang}
+                  onChange={(e) => handlePenumpangChange("penumpangDatang", e.target.value)}
+                  placeholder="0"
+                  className={inputCls(!!errors.penumpangDatang)}
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-text-secondary">max {maxPenumpang}</span>
+              </div>
+            ) : (
+              <input type="text" value="0" readOnly className={`${inputCls(false)} bg-gray-50 cursor-not-allowed font-semibold`} />
+            )}
           </Field>
 
-          {/* Status (read-only) */}
+          {/* Baris 2 kiri: Status */}
           <Field label="Status" error={errors.status}>
             <input
               type="text"
@@ -434,19 +426,25 @@ function FormView({
             />
           </Field>
 
-          {/* Jumlah Penumpang sekunder (otomatis 0) */}
-          <Field
-            label={mode === "kedatangan" ? "Jumlah Penumpang Keberangkatan" : "Jumlah Penumpang Kedatangan"}
-          >
-            <input
-              type="text"
-              value="0"
-              readOnly
-              className={`${inputCls(false)} bg-gray-50 cursor-not-allowed font-semibold`}
-            />
+          {/* Baris 2 kanan: Jumlah Penumpang Keberangkatan */}
+          <Field label="Jumlah Penumpang Keberangkatan" error={errors.penumpangBerangkat}>
+            {mode === "keberangkatan" ? (
+              <div className="relative">
+                <input
+                  type="number" min="0" max={maxPenumpang}
+                  value={form.penumpangBerangkat}
+                  onChange={(e) => handlePenumpangChange("penumpangBerangkat", e.target.value)}
+                  placeholder="0"
+                  className={inputCls(!!errors.penumpangBerangkat)}
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-text-secondary">max {maxPenumpang}</span>
+              </div>
+            ) : (
+              <input type="text" value="0" readOnly className={`${inputCls(false)} bg-gray-50 cursor-not-allowed font-semibold`} />
+            )}
           </Field>
 
-          {/* Jenis Kendaraan */}
+          {/* Baris 3 kiri: Jenis Kendaraan */}
           <SelectField
             label="Jenis Kendaraan"
             error={errors.jenis}
@@ -455,17 +453,46 @@ function FormView({
               set("jenis", val);
               set("tnkb", "");
               set("perusahaan", "");
-              if (val && kapasitasMap[val]) {
-                set("kapasitas", kapasitasMap[val]);
-              } else {
-                set("kapasitas", "");
-              }
+              set("kapasitas", kapasitasMap[val] ?? "");
             }}
             options={jenisOptions}
             placeholder="Pilih jenis kendaraan"
           />
 
-          {/* TNKB — combobox berdasarkan jenis kendaraan */}
+          {/* Baris 3 kanan: Trayek Asal */}
+          <Field label="Trayek Asal" error={errors.trayekAsal}>
+            <input
+              type="text"
+              value={form.trayekAsal}
+              onChange={(e) => set("trayekAsal", e.target.value)}
+              placeholder="Contoh: Banda Aceh"
+              className={inputCls(!!errors.trayekAsal)}
+            />
+          </Field>
+
+          {/* Baris 4 kiri: Kapasitas Mobil */}
+          <Field label="Kapasitas Mobil" error={errors.kapasitas}>
+            <input
+              type="text"
+              value={form.kapasitas ? `${form.kapasitas} penumpang` : ""}
+              readOnly
+              placeholder="Otomatis dari jenis kendaraan"
+              className={`${inputCls(false)} bg-gray-50 cursor-not-allowed font-semibold`}
+            />
+          </Field>
+
+          {/* Baris 4 kanan: Trayek Tujuan */}
+          <Field label="Trayek Tujuan" error={errors.trayekTujuan}>
+            <input
+              type="text"
+              value={form.trayekTujuan}
+              onChange={(e) => set("trayekTujuan", e.target.value)}
+              placeholder="Contoh: Blangpidie"
+              className={inputCls(!!errors.trayekTujuan)}
+            />
+          </Field>
+
+          {/* Baris 5 kiri: TNKB */}
           <Field label="TNKB" error={errors.tnkb}>
             <div className="relative">
               <input
@@ -480,9 +507,7 @@ function FormView({
               />
               {showTnkbDrop && form.jenis && (() => {
                 const allOptions = vehicleMap[form.jenis.toLowerCase()] || [];
-                const filtered = allOptions.filter((v) =>
-                  v.tnkb.toUpperCase().includes(form.tnkb.toUpperCase())
-                );
+                const filtered = allOptions.filter((v) => v.tnkb.toUpperCase().includes(form.tnkb.toUpperCase()));
                 if (filtered.length === 0) return null;
                 return (
                   <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-30 max-h-52 overflow-y-auto">
@@ -497,17 +522,11 @@ function FormView({
                           if (v.trayekTujuan) set("trayekTujuan", v.trayekTujuan);
                           setShowTnkbDrop(false);
                         }}
-                        className={`w-full text-left px-5 py-2.5 text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                          form.tnkb === v.tnkb
-                            ? "bg-sidebar text-white font-medium"
-                            : "text-text-primary hover:bg-gray-50"
-                        }`}
+                        className={`w-full text-left px-5 py-2.5 text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${form.tnkb === v.tnkb ? "bg-sidebar text-white font-medium" : "text-text-primary hover:bg-gray-50"}`}
                       >
                         <span className="font-semibold">{v.tnkb}</span>
                         {v.perusahaan && (
-                          <span className={`ml-2 text-xs ${form.tnkb === v.tnkb ? "text-white/70" : "text-text-secondary"}`}>
-                            {v.perusahaan}
-                          </span>
+                          <span className={`ml-2 text-xs ${form.tnkb === v.tnkb ? "text-white/70" : "text-text-secondary"}`}>{v.perusahaan}</span>
                         )}
                       </button>
                     ))}
@@ -517,40 +536,7 @@ function FormView({
             </div>
           </Field>
 
-          {/* Trayek Asal */}
-          <Field label="Trayek Asal" error={errors.trayekAsal}>
-            <input
-              type="text"
-              value={form.trayekAsal}
-              onChange={(e) => set("trayekAsal", e.target.value)}
-              placeholder="Contoh: Banda Aceh"
-              className={inputCls(!!errors.trayekAsal)}
-            />
-          </Field>
-
-          {/* Trayek Tujuan */}
-          <Field label="Trayek Tujuan" error={errors.trayekTujuan}>
-            <input
-              type="text"
-              value={form.trayekTujuan}
-              onChange={(e) => set("trayekTujuan", e.target.value)}
-              placeholder="Contoh: Blangpidie"
-              className={inputCls(!!errors.trayekTujuan)}
-            />
-          </Field>
-
-          {/* Kapasitas Mobil (read-only) */}
-          <Field label="Kapasitas Mobil" error={errors.kapasitas}>
-            <input
-              type="text"
-              value={form.kapasitas ? `${form.kapasitas} penumpang` : ""}
-              readOnly
-              placeholder="Otomatis dari jenis kendaraan"
-              className={`${inputCls(false)} bg-gray-50 cursor-not-allowed font-semibold`}
-            />
-          </Field>
-
-          {/* Nama Perusahaan */}
+          {/* Baris 5 kanan: Nama Perusahaan */}
           <Field label="Nama Perusahaan" error={errors.perusahaan}>
             <input
               type="text"

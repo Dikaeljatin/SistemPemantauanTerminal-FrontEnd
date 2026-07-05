@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Plus, Search, Shield, User, Pencil, Trash2, X, Check, Loader2, Eye, EyeOff } from "lucide-react";
+import { Users, Plus, Search, Shield, User, Pencil, Trash2, X, Check, Loader2, Eye, EyeOff, Activity, Clock, Send } from "lucide-react";
 import { useState, useEffect } from "react";
 import { apiFetch } from "../../lib/api";
 
@@ -230,6 +230,8 @@ function DeleteModal({ user, onConfirm, onClose }: { user: UserData; onConfirm: 
   );
 }
 
+interface ActivityItem { id: number; username: string; action: string; description: string; detail: string | null; created_at: string; }
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function KelolaUserPage() {
   const [users, setUsers]           = useState<UserData[]>([]);
@@ -239,6 +241,30 @@ export default function KelolaUserPage() {
   const [deleteUser, setDeleteUser] = useState<UserData | null>(null);
   const [pendingEdit, setPendingEdit] = useState<Omit<UserData, "id"> | null>(null);
   const [isLoading, setIsLoading]   = useState(true);
+
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [isLoadingActivity, setIsLoadingActivity] = useState(true);
+  const [actSearchQuery, setActSearchQuery] = useState("");
+  const [actFilterAction, setActFilterAction] = useState<"semua" | "create" | "update" | "delete" | "kirim">("semua");
+
+  useEffect(() => {
+    setIsLoadingActivity(true);
+    apiFetch("/api/activity")
+      .then((res) => res.json())
+      .then((json) => setActivities(json.data || []))
+      .catch(() => setActivities([]))
+      .finally(() => setIsLoadingActivity(false));
+  }, []);
+
+  const filteredActivities = activities.filter((a) => {
+    const matchAction = actFilterAction === "semua" || a.action === actFilterAction;
+    if (!matchAction) return false;
+    if (actSearchQuery.trim()) {
+      const q = actSearchQuery.toLowerCase();
+      return a.username.toLowerCase().includes(q) || a.description.toLowerCase().includes(q) || (a.detail || "").toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   // Fetch users dari API
   useEffect(() => {
@@ -495,6 +521,72 @@ export default function KelolaUserPage() {
               ))
             )}
           </div>
+        </div>
+
+        {/* Aktivitas User */}
+        <div className="bg-white rounded-2xl p-6 shadow-md">
+          <div className="flex items-center gap-2 mb-5">
+            <Activity className="w-5 h-5 text-sidebar" />
+            <h3 className="font-bold text-text-primary text-base">Aktivitas User</h3>
+            <span className="ml-1 bg-sidebar/10 text-sidebar text-xs font-semibold px-2 py-0.5 rounded-full">{filteredActivities.length}</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <div className="flex rounded-lg overflow-hidden border border-gray-200">
+              {(["semua", "create", "update", "delete", "kirim"] as const).map((s, i) => (
+                <button key={s} onClick={() => setActFilterAction(s)} className={`px-3 py-1.5 text-xs font-medium transition-colors ${i > 0 ? "border-l border-gray-200" : ""} ${actFilterAction === s ? s === "create" ? "bg-green-500 text-white" : s === "update" ? "bg-blue-500 text-white" : s === "delete" ? "bg-red-500 text-white" : s === "kirim" ? "bg-purple-500 text-white" : "bg-sidebar text-white" : "bg-gray-50 text-text-secondary hover:bg-gray-100"}`}>
+                  {s === "semua" ? "Semua" : s === "create" ? "Input" : s === "update" ? "Edit" : s === "delete" ? "Hapus" : "Kirim"}
+                </button>
+              ))}
+            </div>
+            <div className="relative ml-0 sm:ml-auto w-full sm:w-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+              <input type="text" placeholder="Cari user, deskripsi..." value={actSearchQuery} onChange={(e) => setActSearchQuery(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 transition w-full sm:w-56" />
+            </div>
+          </div>
+
+          {isLoadingActivity ? (
+            <div className="flex items-center justify-center gap-2 py-8">
+              <Loader2 className="w-5 h-5 text-sidebar animate-spin" />
+              <span className="text-sm text-text-secondary">Memuat aktivitas...</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+              <table className="w-full min-w-[700px]">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="border-b border-gray-200">
+                    {["Waktu", "User", "Aksi", "Deskripsi", "Detail"].map((col) => (
+                      <th key={col} className="text-left px-3 py-2.5 text-xs font-semibold text-text-secondary uppercase whitespace-nowrap">{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredActivities.length === 0 ? (
+                    <tr><td colSpan={5} className="px-3 py-8 text-center text-sm text-text-secondary">Belum ada aktivitas tercatat.</td></tr>
+                  ) : (
+                    filteredActivities.slice(0, 50).map((item) => (
+                      <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="px-3 py-3 text-xs text-text-secondary whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-text-secondary/60" />
+                            {(() => { const d = new Date(item.created_at); const pad = (n: number) => String(n).padStart(2,"0"); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; })()}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-sm font-medium text-text-primary whitespace-nowrap">{item.username}</td>
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${item.action === "create" ? "bg-green-100 text-green-700" : item.action === "update" ? "bg-blue-100 text-blue-700" : item.action === "kirim" ? "bg-purple-100 text-purple-700" : "bg-red-100 text-red-700"}`}>
+                            {item.action === "create" ? <><Plus className="w-3 h-3" /> Input</> : item.action === "update" ? <><Pencil className="w-3 h-3" /> Edit</> : item.action === "kirim" ? <><Send className="w-3 h-3" /> Kirim</> : <><Trash2 className="w-3 h-3" /> Hapus</>}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-sm text-text-primary">{item.description}</td>
+                        <td className="px-3 py-3 text-xs text-text-secondary">{item.detail || "-"}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </>
