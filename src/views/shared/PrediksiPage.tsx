@@ -41,6 +41,8 @@ interface AccuracyInfo {
   overall_accuracy: number | null;
   cv_mape: number | null;
   evaluation_method: string;
+  accuracy_mode: "backtesting" | "cv";
+  backtesting_days: number;
 }
 
 interface MetaInfo {
@@ -261,7 +263,12 @@ export default function PrediksiPage() {
               <TrendingUp className="w-6 h-6 text-sidebar" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-text-primary text-sm mb-3">Informasi Akurasi Prediksi</h3>
+              <h3 className="font-bold text-text-primary text-sm mb-1">Informasi Akurasi Prediksi</h3>
+              <p className="text-xs text-text-secondary mb-3">
+                {accuracy.accuracy_mode === "backtesting"
+                  ? `Dihitung dari ${accuracy.backtesting_days} hari data aktual pada periode yang dipilih`
+                  : "Dihitung dari data historis (tanggal masa depan tidak memiliki data aktual)"}
+              </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                 <div>
                   <p className="text-xs text-text-secondary mb-1">Akurasi Keseluruhan</p>
@@ -270,9 +277,9 @@ export default function PrediksiPage() {
                   </p>
                 </div>
                 {([
-                  { label: "MAPE Kendaraan Kedatangan", value: accuracy.masuk_mape, color: "text-blue-600" },
-                  { label: "MAPE Kendaraan Keberangkatan", value: accuracy.keluar_mape, color: "text-orange-500" },
-                  { label: "MAPE Penumpang", value: accuracy.penumpang_mape, color: "text-green-600" },
+                  { label: "SMAPE Kendaraan Kedatangan", value: accuracy.masuk_mape, color: "text-blue-600" },
+                  { label: "SMAPE Kendaraan Keberangkatan", value: accuracy.keluar_mape, color: "text-orange-500" },
+                  { label: "SMAPE Penumpang", value: accuracy.penumpang_mape, color: "text-green-600" },
                 ] as { label: string; value: number | null; color: string }[]).map(({ label, value, color }) => (
                   <div key={label}>
                     <p className="text-xs text-text-secondary mb-1">{label}</p>
