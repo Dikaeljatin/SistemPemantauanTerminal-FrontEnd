@@ -277,9 +277,9 @@ export default function PrediksiPage() {
                   </p>
                 </div>
                 {([
-                  { label: "SMAPE Kendaraan Kedatangan", value: accuracy.masuk_mape, color: "text-blue-600" },
-                  { label: "SMAPE Kendaraan Keberangkatan", value: accuracy.keluar_mape, color: "text-orange-500" },
-                  { label: "SMAPE Penumpang", value: accuracy.penumpang_mape, color: "text-green-600" },
+                  { label: "MAPE Kendaraan Kedatangan", value: accuracy.masuk_mape, color: "text-blue-600" },
+                  { label: "MAPE Kendaraan Keberangkatan", value: accuracy.keluar_mape, color: "text-orange-500" },
+                  { label: "MAPE Penumpang", value: accuracy.penumpang_mape, color: "text-green-600" },
                 ] as { label: string; value: number | null; color: string }[]).map(({ label, value, color }) => (
                   <div key={label}>
                     <p className="text-xs text-text-secondary mb-1">{label}</p>
