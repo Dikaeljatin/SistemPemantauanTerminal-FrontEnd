@@ -267,7 +267,7 @@ export default function PrediksiPage() {
               <p className="text-xs text-text-secondary mb-3">
                 {accuracy.accuracy_mode === "backtesting"
                   ? `Dihitung dari ${accuracy.backtesting_days} hari data aktual pada periode yang dipilih`
-                  : "Dihitung dari data historis (tanggal masa depan tidak memiliki data aktual)"}
+                  : `Dihitung dari simulasi prediksi ${summary?.num_days ?? 0} hari pada data historis`}
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                 <div>
