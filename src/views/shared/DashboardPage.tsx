@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "../../lib/api";
-import { CarFront, CalendarDays, Calendar, Filter, ChevronDown, ArrowUpDown, Loader2 } from "lucide-react";
+import { CarFront, CalendarDays, Calendar, ArrowUpDown, Loader2 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, PieChart, Pie,
@@ -58,7 +58,6 @@ export default function DashboardPage() {
   const [filterMode, setFilterMode] = useState<FilterMode>("bulanan");
   const [bulan, setBulan] = useState("Januari");
   const [tahun, setTahun] = useState(new Date().getFullYear());
-  const [openDropdown, setOpenDropdown] = useState(false);
   const [tanggal, setTanggal] = useState(new Date().toISOString().split("T")[0]);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("semua");
 
@@ -153,19 +152,15 @@ export default function DashboardPage() {
 
         {filterMode === "bulanan" && (
           <>
-            <div className="relative">
-              <button onClick={() => setOpenDropdown(!openDropdown)} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-text-primary px-4 py-2 rounded-lg text-sm font-medium transition-colors min-w-[140px] justify-between">
-                <div className="flex items-center gap-2"><Filter className="w-4 h-4" /><span>{bulan}</span></div>
-                <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown ? "rotate-180" : ""}`} />
-              </button>
-              {openDropdown && (
-                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-full max-h-60 overflow-y-auto">
-                  {bulanList.map((b) => (
-                    <button key={b} onClick={() => { setBulan(b); setOpenDropdown(false); }} className={`w-full text-left px-4 py-2 text-sm transition-colors ${bulan === b ? "bg-sidebar text-white" : "text-text-primary hover:bg-gray-50"}`}>{b}</button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <select
+              value={bulan}
+              onChange={(e) => setBulan(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition"
+            >
+              {bulanList.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
             <input type="number" min="2020" max="2099" value={tahun} onChange={(e) => setTahun(parseInt(e.target.value))} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-text-primary bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar/30 focus:border-sidebar transition w-20" />
           </>
         )}
