@@ -194,7 +194,7 @@ export default function PetugasDataKendaraanPage() {
   const handleEdit = async () => {
     if (!editItem) return;
     try {
-      await apiFetch(`/api/pergerakan/${editItem.id}`, {
+      const res = await apiFetch(`/api/pergerakan/${editItem.id}`, {
         method: "PUT",
         body: JSON.stringify({
           tnkb: editForm.tnkb,
@@ -207,13 +207,20 @@ export default function PetugasDataKendaraanPage() {
           updated_by: sessionStorage.getItem("app_username") || null,
         }),
       });
-      fetchData();
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        alert(json.error || "Gagal menyimpan perubahan. Coba lagi.");
+        return;
+      }
+      await fetchData();
+      setEditItem(null);
+      setShowEditConfirm(false);
+      setShowEditSuccess(true);
+      setTimeout(() => setShowEditSuccess(false), 2500);
     } catch (err) {
       console.error("Gagal edit:", err);
+      alert("Gagal terhubung ke server.");
     }
-    setEditItem(null);
-    setShowEditSuccess(true);
-    setTimeout(() => setShowEditSuccess(false), 2500);
   };
 
   const handleImport = async () => {
