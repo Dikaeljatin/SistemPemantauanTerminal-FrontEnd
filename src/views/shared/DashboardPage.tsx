@@ -56,7 +56,7 @@ type FilterStatus = "semua" | "Kedatangan" | "Keberangkatan";
 
 export default function DashboardPage() {
   const [filterMode, setFilterMode] = useState<FilterMode>("bulanan");
-  const [bulan, setBulan] = useState("Januari");
+  const [bulan, setBulan] = useState(bulanList[new Date().getMonth() + 1]);
   const [tahun, setTahun] = useState(new Date().getFullYear());
   const [tanggal, setTanggal] = useState(new Date().toISOString().split("T")[0]);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("semua");

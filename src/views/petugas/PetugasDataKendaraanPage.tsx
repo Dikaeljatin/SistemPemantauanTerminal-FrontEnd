@@ -64,7 +64,7 @@ export default function PetugasDataKendaraanPage() {
 
   // Filter
   const [filterMode, setFilterMode] = useState<"bulanan" | "harian">("bulanan");
-  const [bulan, setBulan] = useState("Januari");
+  const [bulan, setBulan] = useState(bulanList[new Date().getMonth() + 1]);
   const [tahun, setTahun] = useState(new Date().getFullYear());
   const [openDropdown, setOpenDropdown] = useState(false);
   const [filterStatus, setFilterStatus] = useState<"semua" | "Kedatangan" | "Keberangkatan">("semua");

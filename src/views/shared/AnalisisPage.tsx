@@ -87,7 +87,7 @@ const barColors = ["#60a5fa","#4ade80","#fbbf24","#f87171","#a78bfa","#34d399"];
 
 export default function AnalisisPage() {
   const [filterMode, setFilterMode] = useState<"bulanan" | "harian">("bulanan");
-  const [bulan, setBulan] = useState("Januari");
+  const [bulan, setBulan] = useState(bulanList[new Date().getMonth() + 1]);
   const [tahun, setTahun] = useState(new Date().getFullYear());
   const [openDropdown, setOpenDropdown] = useState(false);
   const today = new Date().toISOString().split("T")[0];
